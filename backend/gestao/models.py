@@ -21,12 +21,27 @@ class Tarefa(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='tarefas')
     titulo = models.CharField(max_length=200)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='REALIZAR')
-    progresso = models.IntegerField(default=0) # Porcentagem de 0 a 100
     prazo = models.DateField()
     categoria = models.CharField(max_length=50) # Ex: 3D, Planta Baixa, Prefeitura
 
+    @property
+    def progresso(self):
+        total = self.subtarefas.count()
+        if total == 0:
+            return 0 # Se não tem checklist, é 0%
+        concluidas = self.subtarefas.filter(concluida=True).count()
+        return int((concluidas / total) * 100)
+
     def __str__(self):
-        return f"{self.titulo} - {self.cliente.nome}"
+        return self.titulo
+
+class Subtarefa(models.Model):
+    tarefa = models.ForeignKey(Tarefa, related_name='subtarefas', on_delete=models.CASCADE)
+    titulo = models.CharField(max_length=200)
+    concluida = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.titulo} - {self.tarefa.titulo}"
 
 
 class Pasta(models.Model):
