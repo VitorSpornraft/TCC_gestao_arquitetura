@@ -1,23 +1,24 @@
 from rest_framework import serializers
-from .models import Cliente, Tarefa, Subtarefa, Pasta, Arquivo, VersaoArquivo
+from .models import Cliente, Projeto, Tarefa, Subtarefa, Pasta, Arquivo
 
 class ClienteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cliente
         fields = '__all__'
 
+class ProjetoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Projeto
+        fields = '__all__'
+
+class TarefaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tarefa
+        fields = '__all__'
+
 class SubtarefaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subtarefa
-        fields = '__all__'
-        
-class TarefaSerializer(serializers.ModelSerializer):
-
-    progresso = serializers.ReadOnlyField() 
-    subtarefas = SubtarefaSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Tarefa
         fields = '__all__'
 
 class PastaSerializer(serializers.ModelSerializer):
@@ -28,9 +29,4 @@ class PastaSerializer(serializers.ModelSerializer):
 class ArquivoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Arquivo
-        fields = '__all__'
-
-class VersaoArquivoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = VersaoArquivo
         fields = '__all__'

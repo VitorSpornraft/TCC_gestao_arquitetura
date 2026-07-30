@@ -1,12 +1,9 @@
 from django.contrib import admin
-from .models import Cliente, Tarefa, Pasta, Arquivo, VersaoArquivo
+from .models import Cliente, Projeto, Tarefa, Pasta, Arquivo
 
+# Registrando as tabelas para elas aparecerem no painel do Django Admin
 admin.site.register(Cliente)
+admin.site.register(Projeto)
+admin.site.register(Tarefa)
 admin.site.register(Pasta)
 admin.site.register(Arquivo)
-admin.site.register(VersaoArquivo)
-
-@admin.register(Tarefa)
-class TarefaAdmin(admin.ModelAdmin):
-    list_display = ('titulo', 'cliente', 'status', 'progresso', 'prazo')
-    list_filter = ('status', 'cliente')

@@ -1,11 +1,14 @@
-from django.shortcuts import render
 from rest_framework import viewsets
-from .models import Cliente, Tarefa, Subtarefa, Pasta, Arquivo, VersaoArquivo 
-from .serializers import ClienteSerializer, TarefaSerializer, SubtarefaSerializer, PastaSerializer, ArquivoSerializer, VersaoArquivoSerializer
+from .models import Cliente, Projeto, Tarefa, Subtarefa, Pasta, Arquivo
+from .serializers import ClienteSerializer, ProjetoSerializer, TarefaSerializer, SubtarefaSerializer, PastaSerializer, ArquivoSerializer
 
 class ClienteViewSet(viewsets.ModelViewSet):
     queryset = Cliente.objects.all()
     serializer_class = ClienteSerializer
+
+class ProjetoViewSet(viewsets.ModelViewSet):
+    queryset = Projeto.objects.all()
+    serializer_class = ProjetoSerializer
 
 class TarefaViewSet(viewsets.ModelViewSet):
     queryset = Tarefa.objects.all()
@@ -22,7 +25,3 @@ class PastaViewSet(viewsets.ModelViewSet):
 class ArquivoViewSet(viewsets.ModelViewSet):
     queryset = Arquivo.objects.all()
     serializer_class = ArquivoSerializer
-
-class VersaoArquivoViewSet(viewsets.ModelViewSet):
-    queryset = VersaoArquivo.objects.all()
-    serializer_class = VersaoArquivoSerializer
