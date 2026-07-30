@@ -82,6 +82,27 @@ export default function App() {
     }
   };
 
+  const editarCliente = async (clienteId, dados) => {
+    try {
+      await api.put(`clientes/${clienteId}/`, dados);
+      carregarDados();
+    } catch (error) {
+      console.error("Erro ao editar cliente:", error);
+      alert("Erro ao editar cliente.");
+    }
+  };
+
+  const arquivarCliente = async (clienteId, statusAtual) => {
+    if (window.confirm("Deseja arquivar este cliente? O projeto sairá da tela principal.")) {
+      try {
+        await api.patch(`clientes/${clienteId}/`, { arquivado: !statusAtual });
+        carregarDados();
+      } catch (error) {
+        console.error("Erro ao arquivar cliente:", error);
+      }
+    }
+  };
+
   const adicionarSubtarefa = async (tarefaId, texto) => {
     if (!texto) return;
     try {
@@ -158,7 +179,10 @@ export default function App() {
       {telaAtual === 'clientes' && (
         <ClientList 
           clientes={clientes}
+          tarefas={tarefas}
           aoCriarCliente={criarCliente}
+          aoEditarCliente={editarCliente}
+          aoArquivarCliente={arquivarCliente}
           aoSelecionarCliente={(cliente) => {
             setClienteSelecionado(cliente);
             setTelaAtual('explorador');

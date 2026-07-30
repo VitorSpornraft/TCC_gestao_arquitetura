@@ -3,9 +3,25 @@ from django.db import models
 class Cliente(models.Model):
     nome = models.CharField(max_length=150)
     # null=True, blank=True permite que a foto seja opcional para não travar o cadastro
-    foto = models.ImageField(upload_to='clientes_fotos/', null=True, blank=True) 
-    status = models.CharField(max_length=100, default="Ativo")
+    foto = models.ImageField(upload_to='clientes_fotos/', null=True, blank=True)
     data_cadastro = models.DateTimeField(auto_now_add=True)
+
+    ddi = models.CharField(max_length=5, default="+55")
+    ddd = models.CharField(max_length=5, blank=True, null=True)
+    telefone = models.CharField(max_length=20, blank=True, null=True)
+
+    nome_projeto = models.CharField(max_length=200, blank=True, null=True) # Ex: Clínica Pediátrica
+    tipo_projeto = models.CharField(max_length=100, blank=True, null=True) # Ex: Interiores, Arquitetônico
+    fase_atual = models.CharField(max_length=100, blank=True, null=True)   # Ex: Estudo Preliminar, Obra
+
+    cep = models.CharField(max_length=20, blank=True, null=True)
+    rua = models.CharField(max_length=200, blank=True, null=True)
+    numero = models.CharField(max_length=20, blank=True, null=True)
+    bairro = models.CharField(max_length=100, blank=True, null=True)
+    cidade = models.CharField(max_length=100, blank=True, null=True)
+    uf = models.CharField(max_length=2, blank=True, null=True)
+
+    arquivado = models.BooleanField(default=False)
 
     def __str__(self):
         return self.nome
