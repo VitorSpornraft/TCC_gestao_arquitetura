@@ -11,14 +11,16 @@ class ProjetoSerializer(serializers.ModelSerializer):
         model = Projeto
         fields = '__all__'
 
-class TarefaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tarefa
-        fields = '__all__'
-
 class SubtarefaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subtarefa
+        fields = '__all__'
+
+class TarefaSerializer(serializers.ModelSerializer):
+    subtarefas = SubtarefaSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Tarefa
         fields = '__all__'
 
 class PastaSerializer(serializers.ModelSerializer):

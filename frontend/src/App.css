@@ -1,154 +1,358 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background-color: #f4f5f7;
+/* =========================================
+   TIPOGRAFIA PROFISSIONAL
+   ========================================= */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  /* Paleta "Zinc" (Padrão Vercel/Shadcn) */
+  --bg-app: #FAFAFA;       /* Fundo da tela quase branco */
+  --bg-surface: #FFFFFF;   /* Fundo dos cards puro branco */
+  --bg-column: #F4F4F5;    /* Cinza sutil para as colunas do Kanban */
+  --bg-hover: #F4F4F5;
+  
+  --text-main: #09090B;    /* Quase preto para alto contraste e leitura */
+  --text-muted: #71717A;   /* Cinza médio para textos de apoio */
+  
+  --primary: #18181B;      /* Chumbo/Preto para botões de ação */
+  --primary-hover: #27272A;
+  
+  --border-light: #E4E4E7;
+  
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
 }
 
-.app-container {
-  padding: 30px;
-  height: 100vh;
-  overflow-y: auto;
+/* =========================================
+   RESETS BÁSICOS
+   ========================================= */
+* {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-.nav-bar {
+/* =========================================
+   ESTRUTURA DE LAYOUT (SIDEBAR + MAIN)
+   ========================================= */
+#root {
+  height: 100vh;
+  width: 100vw;
   display: flex;
-  justify-content: space-between;
+  overflow: hidden; /* Trava a rolagem da página inteira */
+  padding: 0; 
+  margin: 0;
+}
+
+.app-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+/* =========================================
+   BARRA LATERAL (SIDEBAR)
+   ========================================= */
+.sidebar {
+  width: 260px;
+  background-color: var(--bg-surface);
+  border-right: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  padding: 32px 16px;
+  flex-shrink: 0; /* Impede a barra de encolher */
+}
+
+.sidebar-header {
+  text-align: center;
+  margin-bottom: 48px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  background-color: #172b4d;
-  padding: 12px 25px;
-  border-radius: 8px;
-  margin-bottom: 25px;
-  color: #fff;
 }
 
-.nav-buttons {
+/* Placeholder circular temporário para a logo */
+.logo-placeholder {
+  width: 64px;
+  height: 64px;
+  background-color: var(--primary);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sidebar-header h1 {
+  font-size: 18px; /* Reduzido um pouco para caber bonito na lateral */
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.sidebar-nav {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
 }
 
+/* =========================================
+   BOTÕES DO MENU LATERAL
+   ========================================= */
 .nav-btn {
-  padding: 8px 16px;
   background-color: transparent;
-  color: #fff;
-  border: 1px solid #4a5568;
-  border-radius: 6px;
+  color: var(--text-muted);
+  border: none;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  fontWeight: 600;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
+  text-align: left; /* Botões na lateral ficam melhores alinhados à esquerda */
+  width: 100%;
+}
+
+.nav-btn:hover {
+  color: var(--text-main);
+  background-color: var(--bg-hover);
 }
 
 .nav-btn.active {
-  background-color: #0052cc;
-  border: none;
-}
-
-.card-form {
-  margin-bottom: 20px;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-}
-
-.form-input {
-  margin-right: 12px;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #dfe1e6;
-  margin-bottom: 10px;
-  font-size: 14px;
-}
-
-.btn-primary {
-  padding: 10px 20px;
-  background-color: #0052cc;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+  background-color: #E4E4E7; /* Um cinza um pouco mais marcado para o item ativo */
+  color: var(--text-main);
   font-weight: 600;
 }
 
+/* =========================================
+   CONTEÚDO PRINCIPAL (MAIN)
+   ========================================= */
+.main-content {
+  flex: 1; /* Ocupa todo o resto da tela à direita */
+  background-color: var(--bg-app);
+  padding: 40px;
+  overflow-y: auto; /* A rolagem acontece SÓ aqui dentro */
+}
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+
+/* Afastando o título principal do resto do sistema */
+h1 {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 24px;
+}
+
+h2, h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 16px;
+}
+
+/* =========================================
+   MENU DE NAVEGAÇÃO SUPERIOR
+   ========================================= */
+/* Container invisível caso os botões estejam agrupados */
+.nav-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 32px; /* Afasta o menu do Kanban e dos formulários */
+}
+
+.nav-btn {
+  background-color: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none; /* Remove a borda preta agressiva que estava na sua imagem */
+}
+
+.nav-btn:hover {
+  color: var(--text-main);
+  background-color: var(--bg-hover);
+}
+
+.nav-btn.active {
+  background-color: var(--bg-surface);
+  color: var(--text-main);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+/* =========================================
+   BOTÃO DE AÇÃO PRINCIPAL
+   ========================================= */
+.btn-primary {
+  background-color: var(--primary);
+  color: #FFFFFF;
+  border: none;
+  outline: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  box-shadow: var(--shadow-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+/* =========================================
+   FORMULÁRIOS
+   ========================================= */
+.card-form {
+  background-color: var(--bg-surface);
+  padding: 24px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 32px; /* Mais espaço entre o form e o Kanban */
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-main);
+  background-color: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus {
+  border-color: var(--text-main);
+  box-shadow: 0 0 0 1px var(--text-main);
+}
+
+.form-input::placeholder {
+  color: #A1A1AA;
+}
+
+/* =========================================
+   KANBAN BOARD
+   ========================================= */
 .kanban-board {
   display: flex;
-  gap: 20px;
+  gap: 24px; /* Mais espaço entre as colunas */
   align-items: flex-start;
-  flex-wrap: wrap;
-  padding-bottom: 40px;
+  overflow-x: auto;
+  padding-bottom: 24px;
 }
 
 .kanban-column {
-  flex: 1 1 300px;
-  background-color: #ebecf0;
-  border-radius: 10px;
-  padding: 15px;
-  max-height: 65vh;
+  background-color: var(--bg-column);
+  min-width: 340px;
+  max-width: 340px;
+  border-radius: var(--radius-md);
+  padding: 16px;
   display: flex;
   flex-direction: column;
 }
 
 .cards-container {
-  overflow-y: auto;
-  flex: 1;
-  padding-right: 5px;
-}
-
-.kanban-card {
-  background-color: #fff;
-  padding: 16px;
-  border-radius: 8px;
-  margin-bottom: 15px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  border-left: 4px solid #0052cc;
-  cursor: grab;
-}
-
-.client-card {
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
-  cursor: pointer;
   display: flex;
-  align-items: center;
-  gap: 15px;
-  border: 1px solid #e1e4e8;
-  transition: transform 0.2s;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 100px;
 }
 
-.clients-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+/* =========================================
+   CARDS DA TAREFA
+   ========================================= */
+.kanban-card {
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  cursor: grab;
+  transition: box-shadow 0.2s, border-color 0.2s;
 }
 
+.kanban-card:hover {
+  border-color: #D4D4D8;
+  box-shadow: var(--shadow-md);
+}
+
+.kanban-card:active {
+  cursor: grabbing;
+}
+
+/* Barras de Progresso Menos Agressivas */
 .progress-bar-bg {
-  background-color: #dfe1e6;
-  border-radius: 4px;
+  background-color: var(--border-light);
+  border-radius: 999px;
   height: 6px;
   width: 100%;
-  margin-top: 10px;
   overflow: hidden;
+  margin-bottom: 12px;
 }
 
+/* Os status das tags/categorias da tarefa */
+.kanban-card span[style*="background-color"] {
+  background-color: #F4F4F5 !important; /* Sobrescreve inline styles antigos */
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-light) !important;
+  font-weight: 500 !important;
+}
+
+/* =========================================
+   CHECKLIST
+   ========================================= */
 .sub-item {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
-  margin-top: 6px;
-  cursor: pointer;
-  color: #333;
+  color: var(--text-muted);
 }
 
+.sub-item input[type="checkbox"] {
+  accent-color: var(--text-main);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  margin-top: 2px;
+}
+
+/* =========================================
+   MODAIS
+   ========================================= */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(9, 30, 66, 0.54);
+  right: 0;
+  bottom: 0;
+  background-color: rgba(24, 24, 27, 0.4);
+  backdrop-filter: blur(2px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -156,12 +360,11 @@ body {
 }
 
 .modal-content {
-  background-color: #fff;
-  padding: 30px;
-  border-radius: 10px;
-  width: 500px;
-  max-width: 90%;
-  box-shadow: 0 20px 32px -4px rgba(9, 30, 66, 0.25);
-  max-height: 90vh;
-  overflow-y: auto;
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  padding: 32px;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
