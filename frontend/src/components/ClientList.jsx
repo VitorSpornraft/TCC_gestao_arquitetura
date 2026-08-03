@@ -1,28 +1,34 @@
 import { useState } from 'react';
 import ClientFormModal from './ClientFormModal';
 
-export default function ClientList({ clientes, tarefas, aoCriarCliente, aoSelecionarCliente, aoEditarCliente, aoArquivarCliente }) {
+export default function ClientList({ projetos, clientes, tarefas, aoCriarProjeto, aoCriarCliente, aoSelecionarProjeto, aoEditarProjeto, aoArquivarProjeto }) {
   const [mostrarArquivados, setMostrarArquivados] = useState(false); 
   const [modalAberto, setModalAberto] = useState(false);
-  const [clienteEditando, setClienteEditando] = useState(null);
+  const [projetoEditando, setProjetoEditando] = useState(null);
 
-  const clientesFiltrados = clientes.filter(c => !!c.arquivado === mostrarArquivados);
+  // Agora filtramos os PROJETOS (obras)
+  const projetosFiltrados = projetos.filter(p => !!p.arquivado === mostrarArquivados);
 
   const handleSalvarModal = (dados) => {
-    if (clienteEditando) aoEditarCliente(dados.id, dados);
-    else aoCriarCliente(dados);
+    // O modal vai lidar internamente com a criação do cliente, se necessário.
+    // Aqui nós focamos em salvar ou editar a Obra (Projeto)
+    if (projetoEditando) {
+      aoEditarProjeto(dados.id, dados);
+    } else {
+      aoCriarProjeto(dados);
+    }
     setModalAberto(false);
-    setClienteEditando(null);
+    setProjetoEditando(null);
   };
 
   const abrirModalNovo = () => {
-    setClienteEditando(null);
+    setProjetoEditando(null);
     setModalAberto(true);
   };
 
-  const abrirModalEditar = (cliente, e) => {
+  const abrirModalEditar = (projeto, e) => {
     e.stopPropagation();
-    setClienteEditando(cliente);
+    setProjetoEditando(projeto);
     setModalAberto(true);
   };
 
@@ -55,73 +61,75 @@ export default function ClientList({ clientes, tarefas, aoCriarCliente, aoSeleci
         </div>
       </div>
       
-      {clientesFiltrados.length === 0 && (
+      {projetosFiltrados.length === 0 && (
         <p style={{ color: '#6b778c', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>
           Nenhum projeto {mostrarArquivados ? 'arquivado' : 'ativo'} no momento.
         </p>
       )}
 
-      {/* GRID DE CARDS COM DESIGN COMPRIMIDO */}
+      {/* GRID DE CARDS */}
       <div className="clients-grid" style={{ gap: '15px' }}>
-        {clientesFiltrados.map(c => {
-          const tarefasDoCliente = tarefas.filter(t => t.cliente === c.id);
+        {projetosFiltrados.map(projeto => {
+          
+          // CRUZAMENTO DE DADOS: Pegando os dados do Dono da Obra
+          const donoDaObra = clientes.find(c => c.id === projeto.cliente) || {};
+          
+          // O progresso agora é calculado baseado no PROJETO (tarefa.projeto === projeto.id)
+          const tarefasDoProjeto = tarefas.filter(t => t.projeto === projeto.id);
           let progressoGeral = 0;
-          if (tarefasDoCliente.length > 0) {
-            const soma = tarefasDoCliente.reduce((acc, t) => acc + (t.progresso || 0), 0);
-            progressoGeral = Math.round(soma / tarefasDoCliente.length);
+          if (tarefasDoProjeto.length > 0) {
+            const soma = tarefasDoProjeto.reduce((acc, t) => acc + (t.progresso || 0), 0);
+            progressoGeral = Math.round(soma / tarefasDoProjeto.length);
           }
 
           return (
             <div 
-              key={c.id} 
+              key={projeto.id} 
               className="client-card" 
-              onClick={() => aoSelecionarCliente(c)} 
-              // CARD MAIS COMPACTO
+              onClick={() => aoSelecionarProjeto(projeto)} 
               style={{ flexDirection: 'column', alignItems: 'stretch', padding: '12px 16px', minHeight: 'auto' }}
             >
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                   
-                  {/* AVATAR MENOR (40px) */}
-                  {c.foto ? (
-                    <img src={c.foto} alt={c.nome} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />
+                  {donoDaObra.foto ? (
+                    <img src={donoDaObra.foto} alt={donoDaObra.nome} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />
                   ) : (
                     <div style={{ width: '40px', height: '40px', borderRadius: '4px', backgroundColor: '#0052cc', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 'bold', flexShrink: 0 }}>
-                      {c.nome_projeto ? c.nome_projeto.charAt(0).toUpperCase() : c.nome.charAt(0).toUpperCase()}
+                      {projeto.nome_projeto ? projeto.nome_projeto.charAt(0).toUpperCase() : '?'}
                     </div>
                   )}
                   
                   <div>
-                    {/* FONTES MENORES E COM MENOS MARGEM */}
-                    <h3 style={{ margin: '0 0 2px 0', color: '#172b4d', fontSize: '15px' }}>{c.nome_projeto || 'Projeto sem título'}</h3>
-                    <h4 style={{ margin: '0 0 6px 0', color: '#5e6c84', fontSize: '12px', fontWeight: '500' }}>{c.nome}</h4>
+                    <h3 style={{ margin: '0 0 2px 0', color: '#172b4d', fontSize: '15px' }}>{projeto.nome_projeto || 'Projeto sem título'}</h3>
+                    <h4 style={{ margin: '0 0 6px 0', color: '#5e6c84', fontSize: '12px', fontWeight: '500' }}>Cliente: {donoDaObra.nome || 'Desconhecido'}</h4>
                     
                     <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '6px' }}>
-                      {c.tipo_projeto && (
-                        <span style={{ fontSize: '9px', backgroundColor: '#e6fcff', color: '#006644', padding: '2px 5px', borderRadius: '3px', fontWeight: 'bold', border: '1px solid #79f2c0' }}>{c.tipo_projeto}</span>
+                      {projeto.tipo_projeto && (
+                        <span style={{ fontSize: '9px', backgroundColor: '#e6fcff', color: '#006644', padding: '2px 5px', borderRadius: '3px', fontWeight: 'bold', border: '1px solid #79f2c0' }}>{projeto.tipo_projeto}</span>
                       )}
-                      {c.fase_atual && (
-                        <span style={{ fontSize: '9px', backgroundColor: '#deebff', color: '#0747a6', padding: '2px 5px', borderRadius: '3px', fontWeight: 'bold', border: '1px solid #b3d4ff' }}>{c.fase_atual}</span>
+                      {projeto.fase_atual && (
+                        <span style={{ fontSize: '9px', backgroundColor: '#deebff', color: '#0747a6', padding: '2px 5px', borderRadius: '3px', fontWeight: 'bold', border: '1px solid #b3d4ff' }}>{projeto.fase_atual}</span>
                       )}
                     </div>
                     
                     <p style={{ margin: 0, fontSize: '10px', color: '#8993a4' }}>
-                      {c.ddd ? `${c.ddi} (${c.ddd}) ${c.telefone}` : 'Sem contato'} 
-                      {c.cidade && c.uf ? ` • ${c.cidade}, ${c.uf}` : ''}
+                      {donoDaObra.ddd ? `${donoDaObra.ddi} (${donoDaObra.ddd}) ${donoDaObra.telefone}` : 'Sem contato'} 
+                      {projeto.cidade && projeto.uf ? ` • ${projeto.cidade}, ${projeto.uf}` : ''}
                     </p>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5e6c84" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ cursor: 'pointer', transition: 'stroke 0.2s' }} onClick={(e) => abrirModalEditar(c, e)} onMouseOver={(e) => e.currentTarget.style.stroke = '#0052cc'} onMouseOut={(e) => e.currentTarget.style.stroke = '#5e6c84'}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5e6c84" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ cursor: 'pointer', transition: 'stroke 0.2s' }} onClick={(e) => abrirModalEditar(projeto, e)} onMouseOver={(e) => e.currentTarget.style.stroke = '#0052cc'} onMouseOut={(e) => e.currentTarget.style.stroke = '#5e6c84'}>
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                   </svg>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#de350b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ cursor: 'pointer', opacity: 0.8, transition: 'opacity 0.2s' }} 
                     onClick={(e) => { 
                       e.stopPropagation(); 
                       const msg = mostrarArquivados ? "Deseja restaurar este projeto?" : "Deseja arquivar este projeto?";
-                      if (window.confirm(msg)) { aoArquivarCliente(c.id, c.arquivado); } 
+                      if (window.confirm(msg)) { aoArquivarProjeto(projeto.id, projeto.arquivado); } 
                     }} 
                     onMouseOver={(e) => e.currentTarget.style.opacity = '1'} onMouseOut={(e) => e.currentTarget.style.opacity = '0.8'}
                   >
@@ -130,10 +138,9 @@ export default function ClientList({ clientes, tarefas, aoCriarCliente, aoSeleci
                 </div>
               </div>
 
-              {/* PROGRESSO MAIS PERTO DO TEXTO */}
               <div style={{ marginTop: '10px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#5e6c84', fontWeight: '600', marginBottom: '4px' }}>
-                  <span>Progresso do Projeto</span>
+                  <span>Progresso da Obra</span>
                   <span>{progressoGeral}%</span>
                 </div>
                 <div className="progress-bar-bg" style={{ height: '6px', backgroundColor: '#ebecf0', borderRadius: '3px' }}>
@@ -147,11 +154,13 @@ export default function ClientList({ clientes, tarefas, aoCriarCliente, aoSeleci
 
       {modalAberto && (
         <ClientFormModal 
-          clienteParaEditar={clienteEditando} 
-          aoSalvar={handleSalvarModal} 
+          projetoParaEditar={projetoEditando} 
+          clientesExistentes={clientes}
+          aoSalvarProjeto={handleSalvarModal} 
+          aoCriarClienteNovo={aoCriarCliente}
           aoFechar={() => {
             setModalAberto(false);
-            setClienteEditando(null);
+            setProjetoEditando(null);
           }} 
         />
       )}

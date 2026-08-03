@@ -9,10 +9,11 @@ import ClientExplorer from './components/ClientExplorer';
 
 export default function App() {
   const [telaAtual, setTelaAtual] = useState('kanban');
-  const [clienteSelecionado, setClienteSelecionado] = useState(null);
+  const [projetoSelecionado, setProjetoSelecionado] = useState(null);
 
   const [tarefas, setTarefas] = useState([]);
   const [clientes, setClientes] = useState([]);
+  const [projetos, setProjetos] = useState([]);
   const [pastas, setPastas] = useState([]);
   const [busca, setBusca] = useState('');
   const [tarefaModal, setTarefaModal] = useState(null);
@@ -25,9 +26,12 @@ export default function App() {
     try {
       const resTarefas = await api.get('tarefas/');
       const resClientes = await api.get('clientes/');
+      const resProjetos = await api.get('projetos/'); 
       const resPastas = await api.get('pastas/');
+      
       setTarefas(resTarefas.data);
       setClientes(resClientes.data);
+      setProjetos(resProjetos.data);
       setPastas(resPastas.data);
     } catch (error) {
       console.error("Erro ao puxar dados:", error);
@@ -49,7 +53,7 @@ export default function App() {
     try {
       await api.put(`tarefas/${tarefaModal.id}/`, {
         titulo: tarefaModal.titulo,
-        cliente: tarefaModal.cliente,
+        projeto: tarefaModal.projeto, 
         categoria: tarefaModal.categoria,
         prazo: tarefaModal.prazo,
         status: tarefaModal.status
@@ -71,38 +75,50 @@ export default function App() {
       }
     }
   };
-
+  
+  // Função para criar o cliente isolado e retornar os dados (usada no Modal)
   const criarCliente = async (dadosNovoCliente) => {
     try {
-      await api.post('clientes/', dadosNovoCliente);
+      const res = await api.post('clientes/', dadosNovoCliente);
       carregarDados();
-      alert("Cliente cadastrado com sucesso!");
+      return res.data; // Retorna o cliente criado para o Modal vincular ao projeto
     } catch (error) {
       console.error("Erro ao cadastrar cliente:", error);
     }
   };
 
-  const editarCliente = async (clienteId, dados) => {
+  const criarProjeto = async (dadosNovoProjeto) => {
     try {
-      await api.put(`clientes/${clienteId}/`, dados);
+      await api.post('projetos/', dadosNovoProjeto);
       carregarDados();
+      alert("Projeto cadastrado com sucesso!");
     } catch (error) {
-      console.error("Erro ao editar cliente:", error);
-      alert("Erro ao editar cliente.");
+      console.error("Erro ao cadastrar projeto:", error);
     }
   };
 
-  const arquivarCliente = async (clienteId, statusAtual) => {
-    if (window.confirm("Deseja arquivar este cliente? O projeto sairá da tela principal.")) {
+  const editarProjeto = async (projetoId, dados) => {
+    try {
+      await api.put(`projetos/${projetoId}/`, dados);
+      carregarDados();
+    } catch (error) {
+      console.error("Erro ao editar projeto:", error);
+      alert("Erro ao editar projeto.");
+    }
+  };
+
+  const arquivarProjeto = async (projetoId, statusAtual) => {
+    if (window.confirm("Deseja arquivar este projeto? Ele sairá da tela principal.")) {
       try {
-        await api.patch(`clientes/${clienteId}/`, { arquivado: !statusAtual });
+        await api.patch(`projetos/${projetoId}/`, { arquivado: !statusAtual });
         carregarDados();
       } catch (error) {
-        console.error("Erro ao arquivar cliente:", error);
+        console.error("Erro ao arquivar projeto:", error);
       }
     }
   };
 
+  // --- SUBTAREFAS ---
   const adicionarSubtarefa = async (tarefaId, texto) => {
     if (!texto) return;
     try {
@@ -155,13 +171,14 @@ export default function App() {
       <Navbar 
         telaAtual={telaAtual} 
         setTelaAtual={setTelaAtual} 
-        setClienteSelecionado={setClienteSelecionado} 
+        setProjetoSelecionado={setProjetoSelecionado} 
       />
 
       {telaAtual === 'kanban' && (
         <Kanban 
           tarefas={tarefas}
-          clientes={clientes}
+          projetos={projetos} 
+          clientes={clientes} 
           busca={busca}
           setBusca={setBusca}
           aoCriarTarefa={criarTarefa}
@@ -178,21 +195,23 @@ export default function App() {
 
       {telaAtual === 'clientes' && (
         <ClientList 
-          clientes={clientes}
+          projetos={projetos} 
+          clientes={clientes} 
           tarefas={tarefas}
+          aoCriarProjeto={criarProjeto} 
           aoCriarCliente={criarCliente}
-          aoEditarCliente={editarCliente}
-          aoArquivarCliente={arquivarCliente}
-          aoSelecionarCliente={(cliente) => {
-            setClienteSelecionado(cliente);
+          aoEditarProjeto={editarProjeto}
+          aoArquivarProjeto={arquivarProjeto}
+          aoSelecionarProjeto={(projeto) => {
+            setProjetoSelecionado(projeto);
             setTelaAtual('explorador');
           }}
         />
       )}
 
-      {telaAtual === 'explorador' && clienteSelecionado && (
+      {telaAtual === 'explorador' && projetoSelecionado && (
         <ClientExplorer 
-          clienteSelecionado={clienteSelecionado}
+          projetoSelecionado={projetoSelecionado}
           pastas={pastas}
           aoVoltar={() => setTelaAtual('clientes')}
         />

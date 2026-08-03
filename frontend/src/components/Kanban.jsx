@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 export default function Kanban({
   tarefas,
+  projetos,
   clientes,
   busca,
   setBusca,
@@ -17,7 +18,7 @@ export default function Kanban({
 }) {
   const [novaTarefa, setNovaTarefa] = useState({
     titulo: '',
-    cliente: '',
+    projeto: '',
     categoria: '',
     prazo: '',
     status: 'REALIZAR'
@@ -28,22 +29,32 @@ export default function Kanban({
   const handleCriar = (e) => {
     e.preventDefault();
     aoCriarTarefa(novaTarefa);
-    setNovaTarefa({ titulo: '', cliente: '', categoria: '', prazo: '', status: 'REALIZAR' });
+    setNovaTarefa({ titulo: '', projeto: '', categoria: '', prazo: '', status: 'REALIZAR' });
   };
 
+  // --- BLINDAGEM CONTRA VALORES NULOS NO BANCO DE DADOS ---
   const tarefasFiltradas = tarefas.filter(t => {
-    const termoBusca = busca.toLowerCase();
-    const matchTitulo = t.titulo.toLowerCase().includes(termoBusca);
-    const matchCategoria = t.categoria.toLowerCase().includes(termoBusca);
-    const clienteObj = clientes.find(c => c.id === t.cliente);
-    const matchCliente = clienteObj ? clienteObj.nome.toLowerCase().includes(termoBusca) : false;
+    const termoBusca = (busca || '').toLowerCase();
 
-    return matchTitulo || matchCategoria || matchCliente;
+    const tituloSeguro = (t.titulo || '').toLowerCase();
+    const categoriaSegura = (t.categoria || '').toLowerCase();
+
+    const matchTitulo = tituloSeguro.includes(termoBusca);
+    const matchCategoria = categoriaSegura.includes(termoBusca);
+
+    // Busca pelo nome do Projeto e do Cliente
+    const projetoObj = projetos.find(p => p.id === t.projeto);
+    const matchProjeto = projetoObj ? (projetoObj.nome_projeto || '').toLowerCase().includes(termoBusca) : false;
+
+    const clienteObj = projetoObj ? clientes.find(c => c.id === projetoObj.cliente) : null;
+    const matchCliente = clienteObj ? (clienteObj.nome || '').toLowerCase().includes(termoBusca) : false;
+
+    return matchTitulo || matchCategoria || matchProjeto || matchCliente;
   });
 
-  const tarefasRealizar = tarefasFiltradas.filter(t => t.status.toUpperCase() === 'REALIZAR');
-  const tarefasRealizando = tarefasFiltradas.filter(t => t.status.toUpperCase() === 'REALIZANDO');
-  const tarefasRealizado = tarefasFiltradas.filter(t => t.status.toUpperCase() === 'REALIZADO');
+  const tarefasRealizar = tarefasFiltradas.filter(t => (t.status || '').toUpperCase() === 'REALIZAR');
+  const tarefasRealizando = tarefasFiltradas.filter(t => (t.status || '').toUpperCase() === 'REALIZANDO');
+  const tarefasRealizado = tarefasFiltradas.filter(t => (t.status || '').toUpperCase() === 'REALIZADO');
 
   const colunasConfig = [
     { titulo: 'Realizar', statusKey: 'REALIZAR', lista: tarefasRealizar },
@@ -60,12 +71,14 @@ export default function Kanban({
             className="form-input" style={{ flex: 2, minWidth: '200px' }} placeholder="Título da tarefa" required
             value={novaTarefa.titulo} onChange={e => setNovaTarefa({...novaTarefa, titulo: e.target.value})} 
           />
-          <select className="form-input" style={{ flex: 1, minWidth: '150px' }} required value={novaTarefa.cliente} onChange={e => setNovaTarefa({...novaTarefa, cliente: e.target.value})}>
-            <option value="">Selecione um Cliente</option>
-            {clientes.map(c => (
-              <option key={c.id} value={c.id}>{c.nome}</option>
+          
+          <select className="form-input" style={{ flex: 1, minWidth: '150px' }} required value={novaTarefa.projeto} onChange={e => setNovaTarefa({...novaTarefa, projeto: e.target.value})}>
+            <option value="">Selecione a Obra...</option>
+            {projetos.map(p => (
+              <option key={p.id} value={p.id}>{p.nome_projeto || `Projeto #${p.id}`}</option>
             ))}
           </select>
+          
           <input 
             className="form-input" style={{ flex: 1, minWidth: '130px' }} placeholder="Categoria (ex: 3D, Planta)" required
             value={novaTarefa.categoria} onChange={e => setNovaTarefa({...novaTarefa, categoria: e.target.value})} 
@@ -86,7 +99,7 @@ export default function Kanban({
         <input 
           className="form-input"
           style={{ width: '100%', paddingLeft: '38px', marginBottom: 0, backgroundColor: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }} 
-          placeholder="Pesquisar por título, categoria ou cliente..."
+          placeholder="Pesquisar por título, categoria, obra ou cliente..."
           value={busca}
           onChange={e => setBusca(e.target.value)}
         />
@@ -109,7 +122,10 @@ export default function Kanban({
             </h3>
             <div className="cards-container">
               {col.lista.map(t => {
-                const clienteObj = clientes.find(c => c.id === t.cliente);
+                
+                const projetoObj = projetos.find(p => p.id === t.projeto);
+                const clienteObj = projetoObj ? clientes.find(c => c.id === projetoObj.cliente) : null;
+                
                 return (
                   <div 
                     key={t.id} 
@@ -123,11 +139,11 @@ export default function Kanban({
                           <img src={clienteObj.foto} alt={clienteObj.nome} style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
                         ) : (
                           <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#0052cc', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold' }}>
-                            {clienteObj ? clienteObj.nome.charAt(0).toUpperCase() : '?'}
+                            {projetoObj && projetoObj.nome_projeto ? projetoObj.nome_projeto.charAt(0).toUpperCase() : '?'}
                           </div>
                         )}
-                        <span style={{ fontSize: '11px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                          {clienteObj ? clienteObj.nome : 'Sem Cliente'}
+                        <span style={{ fontSize: '11px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase', maxWidth: '120px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={projetoObj ? projetoObj.nome_projeto : ''}>
+                          {projetoObj ? (projetoObj.nome_projeto || 'Sem Título') : 'Obra Apagada'}
                         </span>
                       </div>
 
@@ -160,9 +176,9 @@ export default function Kanban({
 
                     <strong style={{ fontSize: '15px', color: '#172b4d', display: 'block', marginBottom: '4px' }}>{t.titulo}</strong>
                     <span style={{ display: 'inline-block', fontSize: '11px', backgroundColor: '#deebff', color: '#0052cc', padding: '2px 6px', borderRadius: '4px', fontWeight: '600', marginBottom: '8px' }}>
-                      {t.categoria}
+                      {t.categoria || 'Sem categoria'}
                     </span>
-                    <p style={{ fontSize: '12px', color: '#6b778c', margin: '0 0 10px 0' }}>Prazo: {t.prazo}</p>
+                    <p style={{ fontSize: '12px', color: '#6b778c', margin: '0 0 10px 0' }}>Prazo: {t.prazo || 'Sem prazo'}</p>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#5e6c84', fontWeight: '600' }}>
                       <span>Progresso</span>
@@ -229,30 +245,30 @@ export default function Kanban({
             <form onSubmit={aoSalvarEdicaoModal}>
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#5e6c84', marginBottom: '5px' }}>Título</label>
-                <input className="form-input" style={{ width: '100%', marginBottom: 0, boxSizing: 'border-box' }} value={tarefaModal.titulo} onChange={e => setTarefaModal({ ...tarefaModal, titulo: e.target.value })} required />
+                <input className="form-input" style={{ width: '100%', marginBottom: 0, boxSizing: 'border-box' }} value={tarefaModal.titulo || ''} onChange={e => setTarefaModal({ ...tarefaModal, titulo: e.target.value })} required />
               </div>
 
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#5e6c84', marginBottom: '5px' }}>Cliente</label>
-                  <select className="form-input" style={{ width: '100%', marginBottom: 0, boxSizing: 'border-box' }} value={tarefaModal.cliente} onChange={e => setTarefaModal({ ...tarefaModal, cliente: e.target.value })} required>
-                    {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#5e6c84', marginBottom: '5px' }}>Obra / Projeto</label>
+                  <select className="form-input" style={{ width: '100%', marginBottom: 0, boxSizing: 'border-box' }} value={tarefaModal.projeto || ''} onChange={e => setTarefaModal({ ...tarefaModal, projeto: e.target.value })} required>
+                    {projetos.map(p => <option key={p.id} value={p.id}>{p.nome_projeto || `Projeto #${p.id}`}</option>)}
                   </select>
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#5e6c84', marginBottom: '5px' }}>Categoria</label>
-                  <input className="form-input" style={{ width: '100%', marginBottom: 0, boxSizing: 'border-box' }} value={tarefaModal.categoria} onChange={e => setTarefaModal({ ...tarefaModal, categoria: e.target.value })} required />
+                  <input className="form-input" style={{ width: '100%', marginBottom: 0, boxSizing: 'border-box' }} value={tarefaModal.categoria || ''} onChange={e => setTarefaModal({ ...tarefaModal, categoria: e.target.value })} required />
                 </div>
               </div>
 
               <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#5e6c84', marginBottom: '5px' }}>Prazo</label>
-                  <input type="date" className="form-input" style={{ width: '100%', marginBottom: 0, boxSizing: 'border-box' }} value={tarefaModal.prazo} onChange={e => setTarefaModal({ ...tarefaModal, prazo: e.target.value })} required />
+                  <input type="date" className="form-input" style={{ width: '100%', marginBottom: 0, boxSizing: 'border-box' }} value={tarefaModal.prazo || ''} onChange={e => setTarefaModal({ ...tarefaModal, prazo: e.target.value })} required />
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#5e6c84', marginBottom: '5px' }}>Status</label>
-                  <select className="form-input" style={{ width: '100%', marginBottom: 0, boxSizing: 'border-box' }} value={tarefaModal.status} onChange={e => setTarefaModal({ ...tarefaModal, status: e.target.value })}>
+                  <select className="form-input" style={{ width: '100%', marginBottom: 0, boxSizing: 'border-box' }} value={tarefaModal.status || 'REALIZAR'} onChange={e => setTarefaModal({ ...tarefaModal, status: e.target.value })}>
                     <option value="REALIZAR">Realizar</option>
                     <option value="REALIZANDO">Realizando</option>
                     <option value="REALIZADO">Realizado</option>

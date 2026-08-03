@@ -44,7 +44,9 @@ class Projeto(models.Model):
 class Tarefa(models.Model):
     titulo = models.CharField(max_length=200)
     descricao = models.TextField(blank=True, null=True)
-    status = models.CharField(max_length=50, default='Pendente')
+    categoria = models.CharField(max_length=100, blank=True, null=True)
+    prazo = models.DateField(blank=True, null=True)
+    status = models.CharField(max_length=50, default='REALIZAR')
     progresso = models.IntegerField(default=0)
     
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='tarefas')
