@@ -46,8 +46,10 @@ class Tarefa(models.Model):
     descricao = models.TextField(blank=True, null=True)
     categoria = models.CharField(max_length=100, blank=True, null=True)
     prazo = models.DateField(blank=True, null=True)
-    status = models.CharField(max_length=50, default='REALIZAR')
+    prioridade = models.CharField(max_length=20, default='normal')
+    status = models.CharField(max_length=50, default='WIP')
     progresso = models.IntegerField(default=0)
+    arquivado = models.BooleanField(default=False)
     
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='tarefas')
     

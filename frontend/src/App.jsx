@@ -3,10 +3,14 @@ import ClientList from "./components/ClientList";
 import ClientExplorer from './components/ClientExplorer';
 import Kanban from './components/Kanban';
 import ClientFormModal from './components/ClientFormModal';
+import ConfirmActionModal from './components/modals/ConfirmActionModal';
+import Navbar from './components/Navbar';
+import Login from './components/Login';
 import axios from 'axios';
-import './App.css';
 
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   const [clientes, setClientes] = useState([]);
   const [projetos, setProjetos] = useState([]);
   const [tarefas, setTarefas] = useState([]);
@@ -17,15 +21,17 @@ export default function App() {
   const [projetoSelecionado, setProjetoSelecionado] = useState(null);
   const [busca, setBusca] = useState('');
   
-  // Estados para controle do Modal de Obras
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
-  const [projetoParaEditar, setProjetoParaEditar] = useState(null); // <- Novo estado para edição
-  
+  const [projetoParaEditar, setProjetoParaEditar] = useState(null);
   const [tarefaModal, setTarefaModal] = useState(null);
+  const [confirmacao, setConfirmacao] = useState(null);
 
-  // === CARREGAMENTO INICIAL DOS DADOS DA API ===
   useEffect(() => {
-    carregarDados();
+    const token = localStorage.getItem('token');
+    if (token) {
+      setIsLoggedIn(true);
+      carregarDados();
+    }
   }, []);
 
   const carregarDados = async () => {
@@ -47,8 +53,12 @@ export default function App() {
     }
   };
 
-  // === FUNÇÕES DO MODAL AVANÇADO DE OBRAS/CLIENTES ===
-  
+  const fazerLogout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    setProjetoSelecionado(null);
+  };
+
   const abrirModalNovaObra = () => {
     setProjetoParaEditar(null);
     setIsClientModalOpen(true);
@@ -68,7 +78,7 @@ export default function App() {
     try {
       const res = await axios.post('http://127.0.0.1:8000/api/clientes/', dadosCliente);
       setClientes([...clientes, res.data]); 
-      return res.data; // Retorna o cliente novo para o modal vincular à obra
+      return res.data;
     } catch (error) {
       console.error("Erro ao criar novo cliente:", error);
       return null;
@@ -78,102 +88,128 @@ export default function App() {
   const aoSalvarProjeto = async (dadosProjeto) => {
     try {
       if (dadosProjeto.id) {
-        // Se tem ID, é Edição
         await axios.put(`http://127.0.0.1:8000/api/projetos/${dadosProjeto.id}/`, dadosProjeto);
       } else {
-        // Se não tem ID, é Criação Nova
         await axios.post('http://127.0.0.1:8000/api/projetos/', dadosProjeto);
       }
-      
-      carregarDados(); // Atualiza a tela com os dados do banco
-      aoFecharModalObra(); // Fecha o modal
+      carregarDados();
+      aoFecharModalObra();
     } catch (error) {
       console.error("Erro ao salvar a obra:", error);
-      alert("Ocorreu um erro ao salvar a obra. Verifique se o servidor está rodando e se os dados estão corretos.");
+      alert("Ocorreu um erro ao salvar a obra.");
     }
   };
 
-
-  // === FUNÇÕES DE MANIPULAÇÃO DE OBRAS/PROJETOS ===
-  const aoDeletarProjeto = async (id, nome) => {
+  const aoDeletarProjeto = (id, nome) => {
     const projeto = projetos.find(p => p.id === id);
-
     if (!projeto.arquivado) {
-      const confirmar = window.confirm(`Deseja enviar a obra "${nome}" para os Arquivados?`);
-      if (!confirmar) return;
-
-      try {
-        const res = await axios.patch(`http://127.0.0.1:8000/api/projetos/${id}/`, { arquivado: true });
-        setProjetos(projetos.map(p => p.id === id ? res.data : p));
-      } catch (error) {
-        console.error("Erro ao arquivar obra:", error);
-        alert("Erro ao arquivar a obra. Verifique se a API suporta o método PATCH.");
-      }
+      setConfirmacao({
+        titulo: "Arquivar obra",
+        mensagem: `Deseja enviar a obra "${nome}" para os Arquivados?`,
+        textoConfirmar: "Arquivar",
+        variante: "aviso",
+        aoConfirmar: async () => {
+          try {
+            const res = await axios.patch(`http://127.0.0.1:8000/api/projetos/${id}/`, { arquivado: true });
+            setProjetos(projetos.map(p => p.id === id ? res.data : p));
+          } catch (error) { console.error("Erro ao arquivar obra:", error); }
+        },
+      });
     } else {
-      const confirmar = window.confirm(`CUIDADO: Tem certeza que deseja excluir DEFINITIVAMENTE a obra "${nome}"? Esta ação não tem volta.`);
-      if (!confirmar) return;
+      setConfirmacao({
+        titulo: "Excluir obra permanentemente",
+        mensagem: `A obra "${nome}" e seus dados vinculados serão excluídos permanentemente. Deseja continuar?`,
+        textoConfirmar: "Excluir definitivamente",
+        variante: "perigo",
+        aoConfirmar: async () => {
+          try {
+            await axios.delete(`http://127.0.0.1:8000/api/projetos/${id}/`);
+            setProjetos(projetos.filter(p => p.id !== id));
+            setTarefas(tarefas.filter(t => t.projeto !== id));
+          } catch (error) { console.error("Erro ao deletar obra:", error); }
+        },
+      });
+    }
+  };
 
-      try {
-        await axios.delete(`http://127.0.0.1:8000/api/projetos/${id}/`);
-        // Remove a obra da tela
-        setProjetos(projetos.filter(p => p.id !== id));
-        
-        // Remove instantaneamente as tarefas "órfãs" da tela do Kanban
-        setTarefas(tarefas.filter(t => t.projeto !== id));
-        
-      } catch (error) {
-        console.error("Erro ao deletar obra definitivamente:", error);
-        alert("Ocorreu um erro ao tentar excluir a obra.");
+  const aoRestaurarProjeto = (id, nome) => {
+    setConfirmacao({
+      titulo: "Restaurar obra",
+      mensagem: `Deseja restaurar a obra "${nome}" para os projetos ativos?`,
+      textoConfirmar: "Restaurar",
+      variante: "padrao",
+      aoConfirmar: async () => {
+        try {
+          const res = await axios.patch(`http://127.0.0.1:8000/api/projetos/${id}/`, { arquivado: false });
+          setProjetos(projetos.map(p => p.id === id ? res.data : p));
+        } catch (error) { console.error("Erro ao restaurar obra:", error); }
+      },
+    });
+  };
+
+  const aoCriarTarefa = async (dadosTarefa) => {
+    try {
+      const { checklistTemplate, ...dadosParaEnviar } = dadosTarefa;
+      const res = await axios.post('http://127.0.0.1:8000/api/tarefas/', dadosParaEnviar);
+      const novaTarefaCriada = res.data;
+
+      if (checklistTemplate && checklistTemplate.length > 0) {
+        const novasSubtarefas = [];
+        for (const item of checklistTemplate) {
+          const subRes = await axios.post('http://127.0.0.1:8000/api/subtarefas/', {
+            titulo: item,
+            concluida: false,
+            tarefa: novaTarefaCriada.id
+          });
+          novasSubtarefas.push(subRes.data);
+        }
+        novaTarefaCriada.subtarefas = novasSubtarefas;
       }
-    }
-  };
 
-  const aoRestaurarProjeto = async (id, nome) => {
-    const confirmar = window.confirm(`Deseja restaurar a obra "${nome}" para os projetos Ativos?`);
-    if (!confirmar) return;
-
-    try {
-      // Faz um PATCH mandando o arquivado de volta para FALSE
-      const res = await axios.patch(`http://127.0.0.1:8000/api/projetos/${id}/`, { arquivado: false });
-      
-      // Atualiza a tela instantaneamente
-      setProjetos(projetos.map(p => p.id === id ? res.data : p));
-    } catch (error) {
-      console.error("Erro ao restaurar obra:", error);
-      alert("Erro ao restaurar a obra.");
-    }
-  };
-
-  // === FUNÇÕES DE MANIPULAÇÃO DO KANBAN ===
-  const aoCriarTarefa = async (novaTarefa) => {
-    try {
-      const res = await axios.post('http://127.0.0.1:8000/api/tarefas/', novaTarefa);
-      setTarefas([...tarefas, res.data]);
+      setTarefas([...tarefas, novaTarefaCriada]);
     } catch (error) {
       console.error("Erro ao criar tarefa:", error);
     }
   };
 
   const aoDeletarTarefa = async (id) => {
+    const tarefa = tarefas.find((item) => item.id === id);
+    if (!tarefa) return;
+
+    try {
+      const res = await axios.patch(`http://127.0.0.1:8000/api/tarefas/${id}/`, {
+        arquivado: true,
+      });
+      setTarefas(tarefas.map((item) => item.id === id ? { ...item, ...res.data } : item));
+    } catch (error) {
+      console.error("Erro ao arquivar tarefa:", error);
+    }
+  };
+
+  const aoRestaurarTarefa = async (id) => {
+    try {
+      const res = await axios.patch(`http://127.0.0.1:8000/api/tarefas/${id}/`, {
+        arquivado: false,
+      });
+      setTarefas(tarefas.map((item) => item.id === id ? { ...item, ...res.data } : item));
+    } catch (error) {
+      console.error("Erro ao restaurar tarefa:", error);
+    }
+  };
+
+  const aoExcluirTarefaPermanentemente = async (id) => {
     try {
       await axios.delete(`http://127.0.0.1:8000/api/tarefas/${id}/`);
-      setTarefas(tarefas.filter(t => t.id !== id));
+      setTarefas(tarefas.filter((item) => item.id !== id));
+      if (tarefaModal?.id === id) setTarefaModal(null);
     } catch (error) {
-      console.error("Erro ao deletar tarefa:", error);
-      
-      // BLINDAGEM: Se o Django disser que a tarefa já sumiu (Erro 404), nós limpamos ela da tela à força.
-      if (error.response && error.response.status === 404) {
-        setTarefas(tarefas.filter(t => t.id !== id));
-      } else {
-        alert("Ocorreu um erro ao excluir a tarefa.");
-      }
+      console.error("Erro ao excluir tarefa permanentemente:", error);
     }
   };
 
   const aoMoverTarefa = async (tarefaId, novoStatus) => {
     const tarefa = tarefas.find(t => t.id === parseInt(tarefaId));
-    if (tarefa.status === novoStatus) return;
-
+    if (!tarefa || tarefa.status === novoStatus) return;
     try {
       const res = await axios.put(`http://127.0.0.1:8000/api/tarefas/${tarefaId}/`, {
         ...tarefa,
@@ -185,11 +221,10 @@ export default function App() {
     }
   };
 
-  // === FUNÇÕES DO CHECKLIST (SUBTAREFAS) ===
   const aoAdicionarSubtarefa = async (tarefaId, titulo) => {
-    if (!titulo.trim()) return;
+    if (!titulo || !titulo.trim()) return;
     try {
-      const novaSub = { titulo: titulo, concluida: false, tarefa: tarefaId };
+      const novaSub = { titulo: titulo.trim(), concluida: false, tarefa: tarefaId };
       const res = await axios.post('http://127.0.0.1:8000/api/subtarefas/', novaSub);
       
       const novasTarefas = tarefas.map(t => {
@@ -217,7 +252,6 @@ export default function App() {
       });
       
       const tId = tarefaId || sub.tarefa;
-      
       const novasTarefas = tarefas.map(t => {
         if (t.id === tId) {
           return {
@@ -240,7 +274,6 @@ export default function App() {
   const aoDeletarSubtarefa = async (subId, tarefaId) => {
     try {
       await axios.delete(`http://127.0.0.1:8000/api/subtarefas/${subId}/`);
-      
       const novasTarefas = tarefas.map(t => {
         if (t.id === tarefaId) {
           return {
@@ -262,74 +295,76 @@ export default function App() {
 
   const aoSalvarEdicaoModal = async (e) => {
     e.preventDefault();
+    if (!tarefaModal) return;
     try {
-      const res = await axios.put(`http://127.0.0.1:8000/api/tarefas/${tarefaModal.id}/`, tarefaModal);
-      setTarefas(tarefas.map(t => t.id === res.data.id ? res.data : t));
+      const dadosAtualizados = {
+        titulo: tarefaModal.titulo,
+        categoria: tarefaModal.categoria,
+        prazo: tarefaModal.prazo,
+        prioridade: tarefaModal.prioridade || 'normal',
+        status: tarefaModal.status,
+        projeto: typeof tarefaModal.projeto === 'object' ? tarefaModal.projeto.id : tarefaModal.projeto
+      };
+
+      const res = await axios.put(`http://127.0.0.1:8000/api/tarefas/${tarefaModal.id}/`, dadosAtualizados);
+      
+      setTarefas(tarefas.map(t => t.id === res.data.id ? { ...res.data, subtarefas: t.subtarefas } : t));
       setTarefaModal(null);
     } catch (error) {
-      console.error("Erro ao salvar edição da tarefa", error);
+      console.error("Erro ao salvar edição da tarefa:", error.response?.data || error);
+      alert("Ocorreu um erro ao salvar a tarefa. Verifique o console.");
     }
   };
 
-  return (
-    <div className="app-layout">
-      
-      {/* BARRA LATERAL (SIDEBAR) */}
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <div className="logo-placeholder"></div>
-          <h1>Gestão Arquitetônica</h1>
-        </div>
-        
-        <nav className="sidebar-nav">
-          <button 
-            className={`nav-btn ${abaAtiva === 'kanban' ? 'active' : ''}`} 
-            onClick={() => setAbaAtiva('kanban')}
-          >
-            Quadro Kanban
-          </button>
-          
-          <button 
-            className={`nav-btn ${abaAtiva === 'clientes' ? 'active' : ''}`} 
-            onClick={() => {
-              setAbaAtiva('clientes');
-              setProjetoSelecionado(null);
-            }}
-          >
-            Clientes & Obras
-          </button>
-        </nav>
-      </aside>
+  if (!isLoggedIn) {
+    return (
+      <Login 
+        onLoginSucesso={() => {
+          setIsLoggedIn(true);
+          carregarDados();
+        }} 
+      />
+    );
+  }
 
-      {/* CONTEÚDO PRINCIPAL (MAIN) */}
-      <main className="main-content">
+  return (
+    <div className="flex h-screen w-full bg-zinc-50 overflow-hidden font-sans">
+      <Navbar 
+        telaAtual={abaAtiva} 
+        setTelaAtual={setAbaAtiva} 
+        setClienteSelecionado={() => setProjetoSelecionado(null)} 
+        aoSair={fazerLogout}
+      />
+
+      <main className="flex-1 h-full overflow-y-auto w-full p-8 bg-zinc-50/50">
         {abaAtiva === 'clientes' && (
           projetoSelecionado ? (
             <ClientExplorer 
               projetoSelecionado={projetoSelecionado}
+              clientes={clientes}
               pastas={pastas}
               arquivos={arquivos}
+              tarefas={tarefas}
               aoVoltar={() => setProjetoSelecionado(null)}
+              aoAtualizarDados={carregarDados}
             />
           ) : (
-            <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <h2 style={{ margin: 0, fontSize: '20px' }}>Visão Geral de Obras</h2>
-                {/* O Botão agora chama a função que limpa o modal e abre pra Nova Obra */}
-                <button className="btn-primary" onClick={abrirModalNovaObra}>
+            <div className="w-full">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-2xl font-bold text-zinc-900">Visão Geral de Obras</h2>
+                <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm px-5 py-2.5 rounded-xl shadow-sm transition-all" onClick={abrirModalNovaObra}>
                   + Nova Obra
                 </button>
               </div>
-              
               <ClientList 
                 projetos={projetos} 
                 clientes={clientes} 
                 aoSelecionarProjeto={setProjetoSelecionado}
                 aoDeletarProjeto={aoDeletarProjeto} 
-                aoEditarProjeto={abrirModalEdicaoObra} // <- Conectado para quando formos ativar o Lápis!
+                aoEditarProjeto={abrirModalEdicaoObra}
                 aoRestaurarProjeto={aoRestaurarProjeto}
               />
-            </>
+            </div>
           )
         )}
 
@@ -338,10 +373,13 @@ export default function App() {
             tarefas={tarefas}
             projetos={projetos}
             clientes={clientes}
+            arquivos={arquivos}
             busca={busca}
             setBusca={setBusca}
             aoCriarTarefa={aoCriarTarefa}
             aoDeletarTarefa={aoDeletarTarefa}
+            aoRestaurarTarefa={aoRestaurarTarefa}
+            aoExcluirTarefaPermanentemente={aoExcluirTarefaPermanentemente}
             aoMoverTarefa={aoMoverTarefa}
             aoAdicionarSubtarefa={aoAdicionarSubtarefa}
             aoToggleSubtarefa={aoToggleSubtarefa}
@@ -353,7 +391,6 @@ export default function App() {
         )}
       </main>
 
-      {/* MODAL DE CRIAÇÃO/EDIÇÃO (PROJETO/CLIENTE) */}
       {isClientModalOpen && (
         <ClientFormModal
           clientesExistentes={clientes}
@@ -363,7 +400,19 @@ export default function App() {
           aoSalvarProjeto={aoSalvarProjeto}
         />
       )}
-
+      {confirmacao && (
+        <ConfirmActionModal
+          titulo={confirmacao.titulo}
+          mensagem={confirmacao.mensagem}
+          textoConfirmar={confirmacao.textoConfirmar}
+          variante={confirmacao.variante}
+          onFechar={() => setConfirmacao(null)}
+          onConfirmar={() => {
+            confirmacao.aoConfirmar();
+            setConfirmacao(null);
+          }}
+        />
+      )}
     </div>
   );
 }

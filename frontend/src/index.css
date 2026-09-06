@@ -1,13 +1,333 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* =========================================
+   TIPOGRAFIA PROFISSIONAL
+   ========================================= */
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  /* Paleta "Zinc" (Padrão Vercel/Shadcn) */
+  --bg-app: #FAFAFA;
+  --bg-surface: #FFFFFF;
+  --bg-column: #F4F4F5;
+  --bg-hover: #F4F4F5;
+  
+  --text-main: #09090B;
+  --text-muted: #71717A;
+  
+  --primary: #18181B;
+  --primary-hover: #27272A;
+  
+  --border-light: #E4E4E7;
+  
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
 }
 
-body, html, #root {
+/* =========================================
+   ESTRUTURA DE LAYOUT (SIDEBAR + MAIN)
+   ========================================= */
+#root {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  overflow: hidden;
+  padding: 0; 
+  margin: 0;
+}
+
+.app-layout {
+  display: flex;
   width: 100%;
   height: 100%;
+}
+
+/* =========================================
+   BARRA LATERAL (SIDEBAR)
+   ========================================= */
+.sidebar {
+  width: 260px;
+  background-color: var(--bg-surface);
+  border-right: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  padding: 32px 16px;
+  flex-shrink: 0;
+}
+
+.sidebar-header {
+  text-align: center;
+  margin-bottom: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo-placeholder {
+  width: 64px;
+  height: 64px;
+  background-color: var(--primary);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sidebar-header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-main);
   margin: 0;
-  padding: 0;
+  line-height: 1.2;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* =========================================
+   BOTÕES DO MENU LATERAL
+   ========================================= */
+.nav-btn {
+  background-color: transparent;
+  color: var(--text-muted);
+  border: none;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+  outline: none;
+}
+
+.nav-btn:hover {
+  color: var(--text-main);
+  background-color: var(--bg-hover);
+}
+
+.nav-btn.active {
+  background-color: #E4E4E7;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+/* =========================================
+   CONTEÚDO PRINCIPAL (MAIN)
+   ========================================= */
+.main-content {
+  flex: 1;
+  background-color: var(--bg-app);
+  padding: 40px;
+  overflow-y: auto;
+}
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+/* O TRUQUE MÁGICO: Aplica o estilo antigo SÓ se não tiver classe do Tailwind */
+h1:not([class*="text-"]) {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 24px;
+}
+
+h2:not([class*="text-"]), h3:not([class*="text-"]) {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 16px;
+}
+
+/* =========================================
+   MENU DE NAVEGAÇÃO SUPERIOR
+   ========================================= */
+.nav-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+/* =========================================
+   BOTÃO DE AÇÃO PRINCIPAL
+   ========================================= */
+.btn-primary {
+  background-color: var(--primary);
+  color: #FFFFFF;
+  border: none;
+  outline: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  box-shadow: var(--shadow-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+/* =========================================
+   FORMULÁRIOS
+   ========================================= */
+.card-form {
+  background-color: var(--bg-surface);
+  padding: 24px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 32px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-main);
+  background-color: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus {
+  border-color: var(--text-main);
+  box-shadow: 0 0 0 1px var(--text-main);
+}
+
+.form-input::placeholder {
+  color: #A1A1AA;
+}
+
+/* =========================================
+   KANBAN BOARD
+   ========================================= */
+.kanban-board {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 24px;
+}
+
+.kanban-column {
+  background-color: var(--bg-column);
+  min-width: 340px;
+  max-width: 340px;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 100px;
+}
+
+/* =========================================
+   CARDS DA TAREFA
+   ========================================= */
+.kanban-card {
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  cursor: grab;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.kanban-card:hover {
+  border-color: #D4D4D8;
+  box-shadow: var(--shadow-md);
+}
+
+.kanban-card:active {
+  cursor: grabbing;
+}
+
+.progress-bar-bg {
+  background-color: var(--border-light);
+  border-radius: 999px;
+  height: 6px;
+  width: 100%;
   overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.kanban-card span[style*="background-color"] {
+  background-color: #F4F4F5 !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-light) !important;
+  font-weight: 500 !important;
+}
+
+/* =========================================
+   CHECKLIST
+   ========================================= */
+.sub-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.sub-item input[type="checkbox"] {
+  accent-color: var(--text-main);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  margin-top: 2px;
+}
+
+/* =========================================
+   MODAIS
+   ========================================= */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(24, 24, 27, 0.4);
+  backdrop-filter: blur(2px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  padding: 32px;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
