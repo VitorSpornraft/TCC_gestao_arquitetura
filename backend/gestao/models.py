@@ -77,14 +77,21 @@ class Pasta(models.Model):
         return f"{self.nome} - {self.projeto.nome_projeto}"
 
 class Arquivo(models.Model):
-    nome = models.CharField(max_length=255)
+    nome = models.CharField(max_length=255, blank=True, null=True)
     arquivo = models.FileField(upload_to='projetos_arquivos/')
-    pasta = models.ForeignKey(Pasta, on_delete=models.CASCADE, related_name='arquivos')
-    tamanho_bytes = models.BigIntegerField(default=0)
-    criado_em = models.DateTimeField(auto_now_add=True)
+    tamanho_bytes = models.PositiveIntegerField(null=True, blank=True)
+    projeto = models.ForeignKey('Projeto', related_name='arquivos', on_delete=models.CASCADE)
+    pasta = models.ForeignKey('Pasta', related_name='arquivos', on_delete=models.CASCADE, null=True, blank=True)
     
+    # NOVOS CAMPOS PARA O VERSIONAMENTO:
+    versao_de = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='versoes')
+    tarefa = models.ForeignKey('Tarefa', on_delete=models.SET_NULL, null=True, blank=True)
+    comentario = models.TextField(blank=True, null=True)
+    
+    criado_em = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
-        return self.nome
+        return self.nome or self.arquivo.name
 
 # AUTOMAÇÃO: CRIA AS PASTAS ASSIM QUE O PROJETO É SALVO
 @receiver(post_save, sender=Projeto)
