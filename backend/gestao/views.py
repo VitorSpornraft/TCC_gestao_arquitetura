@@ -1,6 +1,7 @@
 from rest_framework import viewsets
 from .models import Cliente, Projeto, Tarefa, Subtarefa, Pasta, Arquivo
 from .serializers import ClienteSerializer, ProjetoSerializer, TarefaSerializer, SubtarefaSerializer, PastaSerializer, ArquivoSerializer
+from rest_framework.parsers import MultiPartParser, FormParser
 
 class ClienteViewSet(viewsets.ModelViewSet):
     queryset = Cliente.objects.all()
@@ -25,3 +26,9 @@ class PastaViewSet(viewsets.ModelViewSet):
 class ArquivoViewSet(viewsets.ModelViewSet):
     queryset = Arquivo.objects.all()
     serializer_class = ArquivoSerializer
+    parser_classes = (MultiPartParser, FormParser)
+
+    def perform_create(self, serializer):
+        arquivo_obj = self.request.FILES.get('arquivo')
+        tamanho = arquivo_obj.size if arquivo_obj else 0
+        serializer.save(tamanho_bytes=tamanho)
