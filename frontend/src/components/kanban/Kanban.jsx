@@ -1,10 +1,10 @@
-import { useState, useRef } from "react";
-import axios from "axios";
-import KanbanBoard from "./kanban/KanbanBoard";
-import KanbanCreationControls from "./kanban/KanbanCreationControls";
-import HistoricoModal from "./kanban/HistoricoModal";
-import TaskEditModal from "./kanban/TaskEditModal";
-import ConfirmActionModal from "./modals/ConfirmActionModal";
+import { useState } from "react";
+import KanbanBoard from "./KanbanBoard";
+import KanbanCreationControls from "./KanbanCreationControls";
+import HistoricoModal from "./HistoricoModal";
+import TaskEditModal from "./TaskEditModal";
+import ConfirmActionModal from "../modals/ConfirmActionModal";
+import { createEmptyTask, TASK_TEMPLATES } from "./taskTemplates";
 
 export default function Kanban({
   tarefas,
@@ -24,24 +24,15 @@ export default function Kanban({
   tarefaModal,
   setTarefaModal,
   aoSalvarEdicaoModal,
-  aoAtualizarDados,
 }) {
-  const [novaTarefa, setNovaTarefa] = useState({
-    titulo: "",
-    projeto: "",
-    categoria: "",
-    prazo: "",
-    prioridade: "normal",
-    status: "WIP",
-    checklistTemplate: [],
-  });
+  const [novaTarefa, setNovaTarefa] = useState(createEmptyTask);
 
   const [mostrarFormNovaTarefa, setMostrarFormNovaTarefa] = useState(false);
   const [novaSubtarefaText, setNovaSubtarefaText] = useState({});
   const [novaSubtarefaModalText, setNovaSubtarefaModalText] = useState("");
   const [colunaSobreArrasto, setColunaSobreArrasto] = useState(null);
   const [cardArrastando, setCardArrastando] = useState(null);
-  const fileInputRef = useRef(null);
+
   const [arquivoHistoricoId, setArquivoHistoricoId] = useState(null);
   const [arquivoHistoricoNome, setArquivoHistoricoNome] = useState('');
   const [confirmacao, setConfirmacao] = useState(null);
@@ -51,50 +42,6 @@ export default function Kanban({
   const [filtroPrioridade, setFiltroPrioridade] = useState("");
   const [ordenacaoPrazo, setOrdenacaoPrazo] = useState("padrao");
   const [mostrarArquivados, setMostrarArquivados] = useState(false);
-
-  // TEMPLATES COM CHECKLIST PRÉ-DEFINIDO
-  const templatesTarefas = [
-    {
-      titulo: "Reunião de Briefing e Levantamento",
-      categoria: "Briefing",
-      prioridade: "normal",
-      checklist: [
-        "Anotar necessidades do cliente",
-        "Medir o terreno/imóvel",
-        "Fotografar o local",
-      ],
-    },
-    {
-      titulo: "Elaboração de Estudo Preliminar (3D)",
-      categoria: "Estudo Preliminar",
-      prioridade: "urgente",
-      checklist: [
-        "Modelagem 3D básica",
-        "Planta baixa de layout",
-        "Apresentação para o cliente",
-      ],
-    },
-    {
-      titulo: "Desenho de Projeto Executivo",
-      categoria: "Executivo",
-      prioridade: "normal",
-      checklist: [
-        "Planta de demolição/construção",
-        "Paginação de piso",
-        "Detalhamento de marcenaria",
-      ],
-    },
-    {
-      titulo: "Revisão de Compatibilização",
-      categoria: "Revisão",
-      prioridade: "revisao",
-      checklist: [
-        "Verificar projeto estrutural",
-        "Verificar hidráulica e elétrica",
-        "Ajustes finais",
-      ],
-    },
-  ];
 
   const aplicarTemplate = (template) => {
     setNovaTarefa((prev) => ({
@@ -109,15 +56,7 @@ export default function Kanban({
   const handleCriar = (e) => {
     e.preventDefault();
     aoCriarTarefa(novaTarefa);
-    setNovaTarefa({
-      titulo: "",
-      projeto: "",
-      categoria: "",
-      prazo: "",
-      prioridade: "normal",
-      status: "WIP",
-      checklistTemplate: [],
-    });
+    setNovaTarefa(createEmptyTask());
     setMostrarFormNovaTarefa(false);
   };
 
@@ -267,29 +206,16 @@ export default function Kanban({
     }
   };
 
-  // Upload rápido de entregável direto no modal da tarefa
-  const uploadEntregavelTarefa = async (e) => {
-    const arquivo = e.target.files?.[0];
-    if (!arquivo || !tarefaModal) return;
-
-    const formData = new FormData();
-    formData.append("arquivo", arquivo);
-    formData.append("projeto", tarefaModal.projeto);
-
-    try {
-      await axios.post("http://127.0.0.1:8000/api/arquivos/", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      alert("Entregável anexado com sucesso à obra!");
-      if (aoAtualizarDados) aoAtualizarDados();
-    } catch (error) {
-      console.error("Erro ao enviar entregável:", error);
-      alert("Falha ao enviar arquivo.");
-    }
-  };
-
   return (
     <div className="w-full space-y-6">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-zinc-900 tracking-tight m-0">
+            Quadro Kanban
+          </h2>
+        </div>
+      </header>
+
       <KanbanCreationControls
         busca={busca}
         setBusca={setBusca}
@@ -303,7 +229,7 @@ export default function Kanban({
         mostrarFormNovaTarefa={mostrarFormNovaTarefa}
         setMostrarFormNovaTarefa={setMostrarFormNovaTarefa}
         handleCriar={handleCriar}
-        templatesTarefas={templatesTarefas}
+        templatesTarefas={TASK_TEMPLATES}
         aplicarTemplate={aplicarTemplate}
         novaTarefa={novaTarefa}
         setNovaTarefa={setNovaTarefa}
@@ -321,6 +247,7 @@ export default function Kanban({
         aoMoverTarefa={aoMoverTarefa}
         projetos={projetos}
         clientes={clientes}
+        arquivos={arquivos}
         isAtrasado={isAtrasado}
         cardArrastando={cardArrastando}
         setCardArrastando={setCardArrastando}
@@ -340,8 +267,6 @@ export default function Kanban({
         aoSalvarEdicaoModal={aoSalvarEdicaoModal}
         projetos={projetos}
         arquivos={arquivos}
-        fileInputRef={fileInputRef}
-        uploadEntregavelTarefa={uploadEntregavelTarefa}
         aoAbrirHistorico={(arquivo) => {
           setArquivoHistoricoId(arquivo.id);
           setArquivoHistoricoNome(
@@ -358,6 +283,7 @@ export default function Kanban({
         <HistoricoModal
           arquivoId={arquivoHistoricoId}
           arquivoNome={arquivoHistoricoNome}
+          listaArquivos={arquivos}
           onClose={() => {
             setArquivoHistoricoId(null);
             setArquivoHistoricoNome("");
