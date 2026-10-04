@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-export const API_BASE_URL = 'http://127.0.0.1:8000/api';
+// Lê a URL do Render em produção. Se estiver rodando no seu PC, usa o localhost.
+const urlConfigurada = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+export const API_BASE_URL = `${urlConfigurada}/api`;
 
 // Conexão centralizada com o backend (Django)
 const api = axios.create({
