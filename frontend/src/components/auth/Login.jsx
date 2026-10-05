@@ -59,8 +59,12 @@ export default function Login({ onLoginSucesso, onAbrirCadastro, onAbrirCliente 
       </div>
 
       {/* Lado Direito - Formulário */}
-      <div className="flex flex-col items-center w-full lg:w-1/2 min-h-screen max-h-screen overflow-y-auto py-10 sm:py-14 px-6 sm:px-12 xl:px-20 relative z-10">
-        <div className="w-full max-w-md space-y-6 my-auto">
+      <div className="flex flex-col w-full lg:w-1/2 h-screen overflow-y-auto">
+        {/* Espaçador Topo */}
+        <div className="flex-1 min-h-[40px] sm:min-h-[64px] shrink-0"></div>
+
+        {/* Container do Formulário */}
+        <div className="w-full max-w-md mx-auto px-6 sm:px-8 shrink-0 space-y-6">
           <div>
             <h2 className="text-4xl font-bold text-slate-900 mb-3 tracking-tight">
               Entrar na plataforma
@@ -214,6 +218,9 @@ export default function Login({ onLoginSucesso, onAbrirCadastro, onAbrirCliente 
             </button>
           </div>
         </div>
+
+        {/* Espaçador Fundo */}
+        <div className="flex-1 min-h-[40px] sm:min-h-[64px] shrink-0"></div>
       </div>
 
       {/* Modal de Recuperação de Senha com OTP */}
