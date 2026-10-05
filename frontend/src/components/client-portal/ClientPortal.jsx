@@ -47,6 +47,9 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
       // 1. Tenta autenticação direta na API Django REST (retorna dados isolados do cliente)
       const data = await loginCliente({ telefone, codigo });
       if (data && data.cliente) {
+        if (data.access) {
+          sessionStorage.setItem('token', data.access);
+        }
         sessionStorage.setItem('cliente_id', data.cliente.id);
         setClienteLogado(data.cliente);
         if (data.projetos) setProjetosLocais(data.projetos);
@@ -86,12 +89,14 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
 
   const handleVoltar = () => {
     sessionStorage.removeItem('cliente_id');
+    sessionStorage.removeItem('token');
     setClienteLogado(null);
     if (onVoltar) onVoltar();
   };
 
   const handleLogout = () => {
     sessionStorage.removeItem('cliente_id');
+    sessionStorage.removeItem('token');
     setClienteLogado(null);
     setProjetoAberto(null);
   };

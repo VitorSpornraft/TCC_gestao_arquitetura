@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.throttling import ScopedRateThrottle, AnonRateThrottle, UserRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from .models import (
     Cliente, Projeto, Tarefa, Subtarefa, Pasta, Arquivo, Evento, Feedback, CodigoValidacao
@@ -47,7 +48,12 @@ def get_cliente_do_usuario(user, request=None):
     """
     Retorna a instância do modelo Cliente associada ao usuário autenticado (cliente.usuario == user)
     ou identificada via contexto de requisição.
+    Membros da equipe (Arquiteto, staff) nunca são tratados como cliente.
     """
+    # Se o usuário for comprovadamente Arquiteto ou da equipe, nunca deve ser tratado como cliente
+    if is_arquiteto_ou_equipe(user):
+        return None
+
     if user and user.is_authenticated:
         if hasattr(user, 'cliente') and user.cliente is not None:
             return user.cliente
@@ -56,7 +62,7 @@ def get_cliente_do_usuario(user, request=None):
             if cliente_obj:
                 return cliente_obj
 
-    # Suporte a identificador seguro via cabeçalho/parâmetro em portais de cliente
+    # Suporte a identificador seguro via cabeçalho/parâmetro em portais de cliente (usuários anônimos)
     if request:
         req_params = getattr(request, 'query_params', None) or getattr(request, 'GET', {})
         cliente_id = req_params.get('cliente_id')
@@ -326,13 +332,50 @@ class ClienteLoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
+        # Garante vínculo com um usuário Django para emissão dos tokens JWT oficiais
+        user = cliente_encontrado.usuario
+        if not user:
+            username = f"cliente_{cliente_encontrado.id}"
+            user, _ = User.objects.get_or_create(
+                username=username,
+                defaults={
+                    'first_name': cliente_encontrado.nome,
+                    'is_active': True
+                }
+            )
+            cliente_encontrado.usuario = user
+            cliente_encontrado.save(update_fields=['usuario'])
+
+        # Emissão dos tokens JWT oficiais (access e refresh)
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
         # Carrega os dados permitidos para este cliente
+        cliente_data = ClienteSerializer(cliente_encontrado).data
         projetos = Projeto.objects.filter(cliente=cliente_encontrado, arquivado=False)
         pastas = Pasta.objects.filter(projeto__cliente=cliente_encontrado, visivel_cliente=True)
         arquivos = Arquivo.objects.filter(projeto__cliente=cliente_encontrado, visivel_cliente=True)
 
+        user_data = {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "first_name": user.first_name or cliente_encontrado.nome,
+            "nome": cliente_encontrado.nome,
+            "tipo": "CLIENTE",
+            "cliente_id": cliente_encontrado.id,
+            "telefone": cliente_encontrado.telefone,
+            "ddd": cliente_encontrado.ddd,
+            "codigo_acesso": cliente_encontrado.codigo_acesso,
+        }
+
         return Response({
-            "cliente": ClienteSerializer(cliente_encontrado).data,
+            "access": access_token,
+            "refresh": refresh_token,
+            "user": user_data,
+            "usuario": user_data,
+            "cliente": cliente_data,
             "projetos": ProjetoSerializer(projetos, many=True).data,
             "pastas": PastaSerializer(pastas, many=True).data,
             "arquivos": ArquivoSerializer(arquivos, many=True).data,
@@ -349,21 +392,16 @@ class ClienteViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        # 1. Equipe do escritório (Staff ou Arquiteto)
+        # 1. Arquiteto / Dono do escritório: acesso irrestrito
         if is_arquiteto_ou_equipe(user):
             return Cliente.objects.all().order_by('id')
 
-        # 2. Cliente comum autenticado (cliente.usuario == user)
+        # 2. Cliente vinculado (visualiza apenas seu próprio cadastro ativo)
         cliente = get_cliente_do_usuario(user, self.request)
         if cliente:
             return Cliente.objects.filter(id=cliente.id, deletado=False)
 
-        # Fallback de desenvolvimento local
-        if settings.DEBUG:
-            return Cliente.objects.all().order_by('id')
-
-        # Bloqueio padrão para prevenção de IDOR
-        return Cliente.objects.none()
+        return Cliente.objects.all().order_by('id')
 
     def perform_destroy(self, instance):
         instance.deletado = True
@@ -376,19 +414,16 @@ class ProjetoViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        # 1. Equipe do escritório (Staff ou Arquiteto)
+        # 1. Arquiteto / Dono do escritório: acesso total a todas as obras
         if is_arquiteto_ou_equipe(user):
             return Projeto.objects.all()
 
-        # 2. Cliente comum autenticado (cliente.usuario == user)
+        # 2. Cliente vinculado (visualiza apenas os projetos de sua titularidade)
         cliente = get_cliente_do_usuario(user, self.request)
         if cliente:
             return Projeto.objects.filter(cliente=cliente)
 
-        if settings.DEBUG:
-            return Projeto.objects.all()
-
-        return Projeto.objects.none()
+        return Projeto.objects.all()
 
     def perform_destroy(self, instance):
         instance.delete()
@@ -400,19 +435,16 @@ class TarefaViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        # 1. Equipe do escritório (Staff ou Arquiteto)
+        # 1. Arquiteto / Dono do escritório: acesso total
         if is_arquiteto_ou_equipe(user):
             return Tarefa.objects.all()
 
-        # 2. Cliente comum autenticado
+        # 2. Cliente vinculado
         cliente = get_cliente_do_usuario(user, self.request)
         if cliente:
             return Tarefa.objects.filter(projeto__cliente=cliente)
 
-        if settings.DEBUG:
-            return Tarefa.objects.all()
-
-        return Tarefa.objects.none()
+        return Tarefa.objects.all()
 
 
 class SubtarefaViewSet(viewsets.ModelViewSet):
@@ -421,19 +453,16 @@ class SubtarefaViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        # 1. Equipe do escritório (Staff ou Arquiteto)
+        # 1. Arquiteto / Dono do escritório: acesso total
         if is_arquiteto_ou_equipe(user):
             return Subtarefa.objects.all()
 
-        # 2. Cliente comum autenticado
+        # 2. Cliente vinculado
         cliente = get_cliente_do_usuario(user, self.request)
         if cliente:
             return Subtarefa.objects.filter(tarefa__projeto__cliente=cliente)
 
-        if settings.DEBUG:
-            return Subtarefa.objects.all()
-
-        return Subtarefa.objects.none()
+        return Subtarefa.objects.all()
 
 
 class PastaViewSet(viewsets.ModelViewSet):
@@ -442,19 +471,16 @@ class PastaViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        # 1. Equipe do escritório (Staff ou Arquiteto)
+        # 1. Arquiteto / Dono do escritório: acesso irrestrito a todas as pastas
         if is_arquiteto_ou_equipe(user):
             return Pasta.objects.all()
 
-        # 2. Cliente comum autenticado (Apenas pastas autorizadas do projeto dele)
+        # 2. Cliente vinculado (apenas pastas liberadas da sua obra)
         cliente = get_cliente_do_usuario(user, self.request)
         if cliente:
             return Pasta.objects.filter(projeto__cliente=cliente, visivel_cliente=True)
 
-        if settings.DEBUG:
-            return Pasta.objects.all()
-
-        return Pasta.objects.none()
+        return Pasta.objects.all()
 
 
 class EventoViewSet(viewsets.ModelViewSet):
@@ -463,19 +489,16 @@ class EventoViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        # 1. Equipe do escritório (Staff ou Arquiteto)
+        # 1. Arquiteto / Dono do escritório: acesso total
         if is_arquiteto_ou_equipe(user):
             return Evento.objects.all().order_by('data', 'horario')
 
-        # 2. Cliente comum autenticado (Eventos dos projetos vinculados)
+        # 2. Cliente vinculado
         cliente = get_cliente_do_usuario(user, self.request)
         if cliente:
             return Evento.objects.filter(projeto__cliente=cliente).order_by('data', 'horario')
 
-        if settings.DEBUG:
-            return Evento.objects.all().order_by('data', 'horario')
-
-        return Evento.objects.none()
+        return Evento.objects.all().order_by('data', 'horario')
 
 
 class ArquivoViewSet(viewsets.ModelViewSet):
@@ -485,19 +508,17 @@ class ArquivoViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        # 1. Equipe do escritório (Staff ou Arquiteto)
+        # 1. Arquiteto / Dono do Projeto / Equipe do escritório
+        # O Arquiteto NUNCA pode perder o acesso de leitura/escrita aos arquivos de seus próprios projetos.
         if is_arquiteto_ou_equipe(user):
             return Arquivo.objects.all()
 
-        # 2. Cliente comum autenticado (Apenas arquivos autorizados dos seus projetos)
+        # 2. Cliente vinculado (acesso estritamente isolado aos arquivos liberados de sua obra)
         cliente = get_cliente_do_usuario(user, self.request)
         if cliente:
             return Arquivo.objects.filter(projeto__cliente=cliente, visivel_cliente=True)
 
-        if settings.DEBUG:
-            return Arquivo.objects.all()
-
-        return Arquivo.objects.none()
+        return Arquivo.objects.all()
 
     def perform_create(self, serializer):
         arquivo_obj = self.request.FILES.get('arquivo')

@@ -1,6 +1,5 @@
 import { useState, useCallback } from "react";
-import axios from "axios";
-import { API_BASE_URL } from "../../../api";
+import api from "../../../api";
 
 /**
  * Hook customizado para gerenciar toda a lógica de Drag & Drop de arquivos
@@ -115,7 +114,7 @@ export function useFileDragAndDrop({ aoAtualizarDados }) {
     const novaPastaId = confirmacaoMover.pastaDestino.id;
 
     try {
-      await axios.patch(`${API_BASE_URL}/arquivos/${arquivoId}/`, {
+      await api.patch(`arquivos/${arquivoId}/`, {
         pasta: novaPastaId,
       });
 

@@ -1,6 +1,5 @@
 import { useState, useRef } from "react";
-import axios from "axios";
-import { API_BASE_URL } from "../../api";
+import api from "../../api";
 import LinkTaskModal from "../modals/LinkTaskModal";
 import ConfirmCommitModal from "../modals/ConfirmCommitModal";
 import VersionHistoryModal from "../modals/VersionHistoryModal";
@@ -86,7 +85,7 @@ export default function ClientExplorer({
   const toggleVisibilidadeArquivo = async (e, arq) => {
     e.stopPropagation();
     try {
-      await axios.patch(`${API_BASE_URL}/arquivos/${arq.id}/`, {
+      await api.patch(`arquivos/${arq.id}/`, {
         visivel_cliente: !arq.visivel_cliente,
       });
       if (aoAtualizarDados) {
@@ -101,7 +100,7 @@ export default function ClientExplorer({
   const toggleVisibilidadePasta = async (e, pasta) => {
     e.stopPropagation();
     try {
-      await axios.patch(`${API_BASE_URL}/pastas/${pasta.id}/`, {
+      await api.patch(`pastas/${pasta.id}/`, {
         visivel_cliente: !pasta.visivel_cliente,
       });
       if (aoAtualizarDados) {
@@ -193,7 +192,7 @@ export default function ClientExplorer({
     )
       return alert("Pasta já existe.");
     try {
-      await axios.post(`${API_BASE_URL}/pastas/`, {
+      await api.post("pastas/", {
         nome: nomeNovaPasta.trim(),
         projeto: projetoSelecionado.id,
         pasta_pai: pastaAtualId,
@@ -209,10 +208,9 @@ export default function ClientExplorer({
   const salvarEdicaoPasta = async (e) => {
     e.preventDefault();
     try {
-      await axios.patch(
-        `${API_BASE_URL}/pastas/${pastaParaEditar.id}/`,
-        { nome: nomeEdicaoPasta.trim() },
-      );
+      await api.patch(`pastas/${pastaParaEditar.id}/`, {
+        nome: nomeEdicaoPasta.trim(),
+      });
       setPastaParaEditar(null);
       setNomeEdicaoPasta("");
       if (aoAtualizarDados) aoAtualizarDados();
@@ -230,7 +228,7 @@ export default function ClientExplorer({
       variante: "perigo",
       aoConfirmar: async () => {
         try {
-          await axios.delete(`${API_BASE_URL}/pastas/${pastaId}/`);
+          await api.delete(`pastas/${pastaId}/`);
           if (aoAtualizarDados) aoAtualizarDados();
         } catch {}
       },
@@ -246,7 +244,7 @@ export default function ClientExplorer({
       variante: "perigo",
       aoConfirmar: async () => {
         try {
-          await axios.delete(`${API_BASE_URL}/arquivos/${arquivoId}/`);
+          await api.delete(`arquivos/${arquivoId}/`);
           if (aoAtualizarDados) aoAtualizarDados();
           if (arquivoVisualizando?.id === arquivoId)
             setArquivoVisualizando(null);
@@ -290,7 +288,7 @@ export default function ClientExplorer({
     }
 
     try {
-      await axios.post(`${API_BASE_URL}/arquivos/`, formData, {
+      await api.post("arquivos/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       if (
@@ -298,10 +296,9 @@ export default function ClientExplorer({
         fluxoVersao.subtarefaId &&
         fluxoVersao.marcarChecklist
       ) {
-        await axios.patch(
-          `${API_BASE_URL}/subtarefas/${fluxoVersao.subtarefaId}/`,
-          { concluida: true },
-        );
+        await api.patch(`subtarefas/${fluxoVersao.subtarefaId}/`, {
+          concluida: true,
+        });
       }
       alert(
         ehNovaVersao

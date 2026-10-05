@@ -290,7 +290,7 @@ class SecurityAndIsolationTestCase(TestCase):
         self.assertIn('mensagem', res.data)
 
     def test_cliente_login_success(self):
-        """Cliente deve conseguir realizar login com telefone e código de acesso válido."""
+        """Cliente deve conseguir realizar login com telefone e código de acesso válido, recebendo tokens JWT e dados."""
         from django.core.cache import cache
         cache.clear()
 
@@ -303,6 +303,10 @@ class SecurityAndIsolationTestCase(TestCase):
             secure=True
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('access', res.data)
+        self.assertIn('refresh', res.data)
+        self.assertIn('user', res.data)
+        self.assertIn('usuario', res.data)
         self.assertEqual(res.data['cliente']['nome'], 'Cliente Um')
         self.assertIn('projetos', res.data)
         self.assertIn('pastas', res.data)
@@ -333,3 +337,45 @@ class SecurityAndIsolationTestCase(TestCase):
         )
         self.assertTrue(bool(novo_cli.codigo_acesso))
         self.assertEqual(len(novo_cli.codigo_acesso), 6)
+
+    def test_arquiteto_can_patch_file_visibility(self):
+        """Arquiteto pode alterar a visibilidade (visivel_cliente) de qualquer arquivo sem erro 404."""
+        self.client.force_authenticate(user=self.arquiteto)
+
+        # Alterna visibilidade do arquivo interno para True
+        res = self.client.patch(
+            f'/api/arquivos/{self.arq_interno.id}/',
+            {'visivel_cliente': True},
+            format='json',
+            secure=True
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.arq_interno.refresh_from_db()
+        self.assertTrue(self.arq_interno.visivel_cliente)
+
+        # Alterna de volta para False
+        res = self.client.patch(
+            f'/api/arquivos/{self.arq_interno.id}/',
+            {'visivel_cliente': False},
+            format='json',
+            secure=True
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.arq_interno.refresh_from_db()
+        self.assertFalse(self.arq_interno.visivel_cliente)
+
+    def test_arquiteto_can_patch_file_visibility_with_client_header(self):
+        """Arquiteto autenticado nunca perde acesso a arquivos mesmo se cabeçalho X-Cliente-ID estiver presente."""
+        self.client.force_authenticate(user=self.arquiteto)
+
+        res = self.client.patch(
+            f'/api/arquivos/{self.arq_interno.id}/',
+            {'visivel_cliente': True},
+            format='json',
+            secure=True,
+            HTTP_X_CLIENTE_ID=str(self.cliente2.id)  # ID de outro cliente no cabeçalho
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.arq_interno.refresh_from_db()
+        self.assertTrue(self.arq_interno.visivel_cliente)
+
