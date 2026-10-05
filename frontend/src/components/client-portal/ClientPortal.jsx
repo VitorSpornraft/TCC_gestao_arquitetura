@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getFileUrl, formatarNomeArquivo } from '../client-explorer/fileUtils';
+import { getFileUrl, formatarNomeArquivo, isArquivoPdf, isArquivoImagem } from '../client-explorer/fileUtils';
 import ApprovalStatusBadge from '../common/ApprovalStatusBadge';
 import ClientFileViewerModal from './ClientFileViewerModal';
 import { loginCliente } from '../../api';
@@ -35,6 +35,29 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
     );
     setArquivoModal(arqAtualizado);
     if (onAtualizarDados) onAtualizarDados();
+  };
+
+  // --- CONTROLE DE CLIQUE E PRÉ-VISUALIZAÇÃO DE ARQUIVOS ---
+  const handleCliqueArquivo = (arq) => {
+    if (!arq) return;
+    const urlFinal = getFileUrl(arq.arquivo) || arq.arquivo;
+
+    // Lógica para PDFs: Ao clicar, não abre o modal, abre diretamente em nova aba
+    if (isArquivoPdf(arq)) {
+      window.open(urlFinal, '_blank');
+      return;
+    }
+
+    // Lógica para Imagens (.png, .jpg, .jpeg): abre o modal de visualização
+    if (isArquivoImagem(arq)) {
+      setArquivoModal(arq);
+      return;
+    }
+
+    // Demais extensões: abre ou executa download em nova aba
+    if (urlFinal) {
+      window.open(urlFinal, '_blank');
+    }
   };
 
   // --- LÓGICA DE LOGIN DO CLIENTE (Com autenticação na API e fallback seguro) ---
@@ -246,7 +269,7 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
               return (
                 <div
                   key={arq.id}
-                  onClick={() => setArquivoModal(arq)}
+                  onClick={() => handleCliqueArquivo(arq)}
                   className="p-4 bg-white border border-slate-200 rounded-2xl flex flex-col justify-between shadow-xs hover:shadow-md hover:border-indigo-300 transition-all group cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
@@ -261,7 +284,9 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
                         <p className="text-sm font-semibold text-slate-900 truncate m-0" title={nome}>
                           {nome}
                         </p>
-                        <p className="text-[11px] font-medium text-slate-400 m-0 mt-0.5">Clique para analisar</p>
+                        <p className="text-[11px] font-medium text-slate-400 m-0 mt-0.5">
+                          {isArquivoPdf(arq) ? 'Clique para abrir PDF' : 'Clique para analisar'}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -279,10 +304,10 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
                     <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                       <button
                         type="button"
-                        onClick={() => setArquivoModal(arq)}
+                        onClick={() => handleCliqueArquivo(arq)}
                         className="px-2.5 py-1 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
                       >
-                        Avaliar
+                        {isArquivoPdf(arq) ? 'Abrir PDF' : isArquivoImagem(arq) ? 'Avaliar' : 'Visualizar'}
                       </button>
                       <a
                         href={getFileUrl(arq.arquivo)}

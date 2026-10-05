@@ -8,6 +8,8 @@ import {
   forcarDownload,
   formatarNomeArquivo,
   getFileUrl,
+  isArquivoPdf,
+  isArquivoImagem,
 } from "./fileUtils";
 import ImagePreviewModal from "./ImagePreviewModal";
 import FolderModal from "./FolderModal";
@@ -78,7 +80,21 @@ export default function ClientExplorer({
       setFluxoVersao({ ...fluxoVersao, passo: 3, arquivoPai: arq });
       return;
     }
-    setArquivoVisualizando(arq);
+
+    const urlFinal = getFileUrl(arq.arquivo) || arq.arquivo;
+    if (isArquivoPdf(arq)) {
+      window.open(urlFinal, "_blank");
+      return;
+    }
+
+    if (isArquivoImagem(arq)) {
+      setArquivoVisualizando(arq);
+      return;
+    }
+
+    if (urlFinal) {
+      window.open(urlFinal, "_blank");
+    }
   };
 
   // --- FUNÇÕES DE VISIBILIDADE DO CLIENTE ---

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import ApprovalStatusBadge from '../common/ApprovalStatusBadge';
 import { adicionarFeedbackArquivo } from '../../api';
+import { getFileUrl as helperGetFileUrl, formatarNomeArquivo as helperFormatName, extrairExtensaoArquivo } from './fileUtils';
 
 export default function ImagePreviewModal({
   arquivo,
@@ -25,10 +26,30 @@ export default function ImagePreviewModal({
 
   if (!arquivoAtual) return null;
 
-  const url = getFileUrl(arquivoAtual.arquivo);
-  const nomeArquivo = arquivoAtual.nome || formatarNomeArquivo(arquivoAtual.arquivo);
-  const ext = (url.split('.').pop() || '').toLowerCase();
-  const isImagem = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'].includes(ext);
+  // Garante URL absoluta completa com baseURL do backend para prevenir broken images
+  const resolverUrlAbsoluta = (caminho) => {
+    if (!caminho || typeof caminho !== 'string') return '';
+    if (caminho.startsWith('http://') || caminho.startsWith('https://')) {
+      return caminho;
+    }
+    const fn = typeof getFileUrl === 'function' ? getFileUrl : helperGetFileUrl;
+    const res = fn(caminho);
+    if (res && (res.startsWith('http://') || res.startsWith('https://'))) {
+      return res;
+    }
+    const backendBase = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
+    const cleanPath = caminho.startsWith('/media/')
+      ? caminho
+      : caminho.startsWith('/')
+        ? `/media${caminho}`
+        : `/media/${caminho}`;
+    return `${backendBase}${cleanPath}`;
+  };
+
+  const url = resolverUrlAbsoluta(arquivoAtual.arquivo);
+  const nomeArquivo = arquivoAtual.nome || (formatarNomeArquivo ? formatarNomeArquivo(arquivoAtual.arquivo) : helperFormatName(arquivoAtual.arquivo));
+  const ext = extrairExtensaoArquivo(arquivoAtual) || (url.split('?')[0].split('.').pop() || '').toLowerCase();
+  const isImagem = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'].includes(ext);
   const isPdf = ext === 'pdf';
   const feedbacks = Array.isArray(arquivoAtual.feedbacks) ? arquivoAtual.feedbacks : [];
 
@@ -109,7 +130,7 @@ export default function ImagePreviewModal({
               <img
                 src={url}
                 alt={nomeArquivo}
-                className="max-h-full max-w-full object-contain rounded-xl shadow-md bg-white border border-slate-200"
+                className="w-auto max-w-full max-h-[85vh] object-contain mx-auto rounded-xl shadow-md bg-white border border-slate-200"
               />
             ) : isPdf ? (
               <div className="w-full h-full bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
