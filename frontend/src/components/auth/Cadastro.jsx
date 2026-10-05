@@ -37,8 +37,16 @@ export default function Cadastro({ onVoltarLogin }) {
       setEtapa("OTP");
     } catch (error) {
       if (error.response && error.response.data) {
-        if (error.response.data.email) {
-          setErro(error.response.data.email[0]);
+        if (error.response.data.password) {
+          const msg = Array.isArray(error.response.data.password)
+            ? error.response.data.password[0]
+            : error.response.data.password;
+          setErro(msg);
+        } else if (error.response.data.email) {
+          const msg = Array.isArray(error.response.data.email)
+            ? error.response.data.email[0]
+            : error.response.data.email;
+          setErro(msg);
         } else if (error.response.data.erro) {
           setErro(error.response.data.erro);
         } else {

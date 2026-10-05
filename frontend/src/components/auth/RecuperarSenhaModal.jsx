@@ -72,7 +72,17 @@ export default function RecuperarSenhaModal({ isOpen, onClose, onSucesso }) {
         onClose();
       }, 1500);
     } catch (error) {
-      if (error.response?.data?.erro) {
+      if (error.response?.data?.nova_senha) {
+        const msg = Array.isArray(error.response.data.nova_senha)
+          ? error.response.data.nova_senha[0]
+          : error.response.data.nova_senha;
+        setErro(msg);
+      } else if (error.response?.data?.password) {
+        const msg = Array.isArray(error.response.data.password)
+          ? error.response.data.password[0]
+          : error.response.data.password;
+        setErro(msg);
+      } else if (error.response?.data?.erro) {
         setErro(error.response.data.erro);
       } else {
         setErro("Código incorreto ou expirado. Tente novamente.");

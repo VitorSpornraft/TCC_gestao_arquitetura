@@ -95,6 +95,22 @@ class ArquitetoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Este e-mail já está cadastrado no sistema.")
         return value
 
+    def validate_password(self, value):
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError as DjangoValidationError
+
+        # Monta objeto User temporário com email/nome para validação de similaridade
+        email = self.initial_data.get('email', '')
+        first_name = self.initial_data.get('first_name', '')
+        user = User(username=email, email=email, first_name=first_name)
+
+        try:
+            validate_password(value, user=user)
+        except DjangoValidationError as e:
+            # Retorna lista com as mensagens amigáveis dos validadores configurados
+            raise serializers.ValidationError(list(e.messages))
+        return value
+
     def create(self, validated_data):
         email_fornecido = validated_data.get('email')
         # Reutiliza conta inativa se já existir tentativa prévia pendente de ativação
@@ -131,4 +147,17 @@ class EsqueciSenhaSerializer(serializers.Serializer):
 class RedefinirSenhaSerializer(serializers.Serializer):
     email = serializers.EmailField()
     codigo = serializers.CharField(max_length=6)
-    nova_senha = serializers.CharField(min_length=6, write_only=True)
+    nova_senha = serializers.CharField(write_only=True)
+
+    def validate_nova_senha(self, value):
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError as DjangoValidationError
+
+        email = self.initial_data.get('email', '')
+        user = User.objects.filter(email__iexact=email).first() if email else None
+
+        try:
+            validate_password(value, user=user)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(list(e.messages))
+        return value

@@ -217,3 +217,74 @@ class SecurityAndIsolationTestCase(TestCase):
         from gestao.serializers import ArquitetoSerializer
         serializer = ArquitetoSerializer(self.arquiteto)
         self.assertNotIn('password', serializer.data)
+
+    def test_registration_rejects_weak_password_too_short(self):
+        """Registro com senha curta (< 8 chars) deve retornar 400 Bad Request com mensagem detalhada."""
+        from django.core.cache import cache
+        cache.clear()
+
+        res = self.client.post(
+            '/api/registrar/',
+            {
+                'email': 'novo_arquiteto@teste.com',
+                'first_name': 'Novo',
+                'password': '123'
+            },
+            secure=True
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password', res.data)
+        # Mensagem específica do validador (MinimumLengthValidator)
+        self.assertTrue(any('8 caracteres' in msg for msg in res.data['password']))
+
+    def test_registration_rejects_common_password(self):
+        """Registro com senha comum (ex: 'password') deve retornar 400 Bad Request."""
+        from django.core.cache import cache
+        cache.clear()
+
+        res = self.client.post(
+            '/api/registrar/',
+            {
+                'email': 'novo_arquiteto2@teste.com',
+                'first_name': 'Novo',
+                'password': 'password123'
+            },
+            secure=True
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password', res.data)
+
+    def test_registration_rejects_password_similar_to_email(self):
+        """Registro com senha igual/similar ao email/usuário deve retornar 400 Bad Request."""
+        from django.core.cache import cache
+        cache.clear()
+
+        res = self.client.post(
+            '/api/registrar/',
+            {
+                'email': 'arquiteto_teste@teste.com',
+                'first_name': 'Arquiteto',
+                'password': 'arquiteto_teste@teste.com'
+            },
+            secure=True
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password', res.data)
+        self.assertTrue(any('parecida' in msg.lower() or 'similar' in msg.lower() for msg in res.data['password']))
+
+    def test_registration_accepts_strong_password(self):
+        """Registro com senha forte deve ser aceito com sucesso (201 Created)."""
+        from django.core.cache import cache
+        cache.clear()
+
+        res = self.client.post(
+            '/api/registrar/',
+            {
+                'email': 'arquiteto_forte@teste.com',
+                'first_name': 'Arquiteto Forte',
+                'password': 'Arq#Segura2026!XyZ'
+            },
+            secure=True
+        )
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertIn('mensagem', res.data)
