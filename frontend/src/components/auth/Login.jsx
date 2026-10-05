@@ -40,7 +40,7 @@ export default function Login({ onLoginSucesso, onAbrirCadastro, onAbrirCliente 
   return (
     <div className="flex min-h-screen w-full bg-slate-50 text-slate-900 font-sans">
       {/* Lado Esquerdo - Imagem */}
-      <div className="hidden lg:flex relative w-1/2 h-screen bg-slate-200">
+      <div className="hidden lg:flex relative w-1/2 min-h-screen bg-slate-200">
         <div className="absolute top-10 left-10 z-10 flex items-center gap-4">
           <div className="flex items-center justify-center w-10 h-10 bg-white/90 backdrop-blur-md text-indigo-700 font-bold text-sm rounded-xl shadow-sm">
             GA
@@ -59,8 +59,8 @@ export default function Login({ onLoginSucesso, onAbrirCadastro, onAbrirCliente 
       </div>
 
       {/* Lado Direito - Formulário */}
-      <div className="flex flex-col justify-center items-center w-full lg:w-1/2 p-8 sm:p-16 xl:p-24 relative z-10">
-        <div className="w-full max-w-md space-y-8">
+      <div className="flex flex-col justify-center items-center w-full lg:w-1/2 min-h-screen max-h-screen overflow-y-auto p-6 sm:p-12 xl:p-20 relative z-10">
+        <div className="w-full max-w-md space-y-6 my-auto py-6">
           <div>
             <h2 className="text-4xl font-bold text-slate-900 mb-3 tracking-tight">
               Entrar na plataforma
@@ -70,19 +70,20 @@ export default function Login({ onLoginSucesso, onAbrirCadastro, onAbrirCliente 
             </p>
           </div>
 
-          {erro && (
-            <div className="p-4 bg-rose-50 border border-rose-200 text-rose-600 rounded-xl text-sm font-medium text-center animate-fadeIn">
-              {erro}
-            </div>
-          )}
+          {/* Espaço reservado para mensagem de erro/status para evitar pulo brusco no layout */}
+          <div className="min-h-[56px] flex items-center justify-center">
+            {erro ? (
+              <div className="w-full p-3.5 bg-rose-50 border border-rose-200 text-rose-600 rounded-xl text-sm font-medium text-center animate-fadeIn">
+                {erro}
+              </div>
+            ) : sucessoRecuperacao ? (
+              <div className="w-full p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-sm font-medium text-center animate-fadeIn">
+                {sucessoRecuperacao}
+              </div>
+            ) : null}
+          </div>
 
-          {sucessoRecuperacao && (
-            <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-sm font-medium text-center animate-fadeIn">
-              {sucessoRecuperacao}
-            </div>
-          )}
-
-          <form onSubmit={fazerLogin} className="space-y-7">
+          <form onSubmit={fazerLogin} className="space-y-6">
             <div className="space-y-3">
               <label className="block text-sm font-semibold text-slate-700">
                 E-mail

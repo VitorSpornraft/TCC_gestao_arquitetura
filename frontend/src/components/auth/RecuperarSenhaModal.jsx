@@ -47,8 +47,8 @@ export default function RecuperarSenhaModal({ isOpen, onClose, onSucesso }) {
       return;
     }
 
-    if (novaSenha.length < 6) {
-      setErro("A senha deve ter pelo menos 6 caracteres.");
+    if (novaSenha.length < 8) {
+      setErro("A senha deve ter pelo menos 8 caracteres.");
       return;
     }
 
@@ -206,7 +206,7 @@ export default function RecuperarSenhaModal({ isOpen, onClose, onSucesso }) {
                 required
                 value={novaSenha}
                 onChange={(e) => setNovaSenha(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 8 caracteres"
                 className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-xs"
               />
             </div>
