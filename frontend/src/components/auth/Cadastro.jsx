@@ -114,8 +114,8 @@ export default function Cadastro({ onVoltarLogin }) {
       </div>
 
       {/* Lado Direito - Painel Dinâmico (Cadastro / OTP) */}
-      <div className="flex flex-col justify-center items-center w-full lg:w-1/2 min-h-screen max-h-screen overflow-y-auto p-6 sm:p-12 xl:p-20 relative z-10">
-        <div className="w-full max-w-md space-y-6 my-auto py-6">
+      <div className="flex flex-col items-center w-full lg:w-1/2 min-h-screen max-h-screen overflow-y-auto py-10 sm:py-14 px-6 sm:px-12 xl:px-20 relative z-10">
+        <div className="w-full max-w-md space-y-6 my-auto">
           <div>
             <h2 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">
               {etapa === "FORMULARIO" ? "Criar nova conta" : "Ativação de Conta"}
