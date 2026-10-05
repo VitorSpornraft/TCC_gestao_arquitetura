@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     ClienteViewSet, ProjetoViewSet, TarefaViewSet, SubtarefaViewSet, 
     PastaViewSet, ArquivoViewSet, RegistrarArquitetoView, EventoViewSet,
-    AtivarContaView, EsqueciSenhaView, RedefinirSenhaView
+    AtivarContaView, EsqueciSenhaView, RedefinirSenhaView, ClienteLoginView
 )
 
 router = DefaultRouter()
@@ -21,4 +21,5 @@ urlpatterns = [
     path('auth/ativar-conta/', AtivarContaView.as_view(), name='ativar-conta'),
     path('auth/esqueci-senha/', EsqueciSenhaView.as_view(), name='esqueci-senha'),
     path('auth/redefinir-senha/', RedefinirSenhaView.as_view(), name='redefinir-senha'),
+    path('auth/cliente-login/', ClienteLoginView.as_view(), name='cliente-login'),
 ]

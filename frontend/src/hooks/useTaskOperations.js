@@ -1,5 +1,4 @@
-import axios from "axios";
-import { API_BASE_URL } from "../api";
+import api from "../api";
 
 export default function useTaskOperations({
   tarefas,
@@ -10,23 +9,17 @@ export default function useTaskOperations({
   const aoCriarTarefa = async (dadosTarefa) => {
     try {
       const { checklistTemplate, ...dadosParaEnviar } = dadosTarefa;
-      const res = await axios.post(
-        `${API_BASE_URL}/tarefas/`,
-        dadosParaEnviar,
-      );
+      const res = await api.post("tarefas/", dadosParaEnviar);
       const novaTarefaCriada = res.data;
 
       if (checklistTemplate && checklistTemplate.length > 0) {
         const novasSubtarefas = [];
         for (const item of checklistTemplate) {
-          const subRes = await axios.post(
-            `${API_BASE_URL}/subtarefas/`,
-            {
-              titulo: item,
-              concluida: false,
-              tarefa: novaTarefaCriada.id,
-            },
-          );
+          const subRes = await api.post("subtarefas/", {
+            titulo: item,
+            concluida: false,
+            tarefa: novaTarefaCriada.id,
+          });
           novasSubtarefas.push(subRes.data);
         }
         novaTarefaCriada.subtarefas = novasSubtarefas;
@@ -43,10 +36,7 @@ export default function useTaskOperations({
     if (!tarefa) return;
 
     try {
-      const res = await axios.patch(
-        `${API_BASE_URL}/tarefas/${id}/`,
-        { arquivado: true },
-      );
+      const res = await api.patch(`tarefas/${id}/`, { arquivado: true });
       setTarefas(
         tarefas.map((item) =>
           item.id === id ? { ...item, ...res.data } : item,
@@ -59,10 +49,7 @@ export default function useTaskOperations({
 
   const aoRestaurarTarefa = async (id) => {
     try {
-      const res = await axios.patch(
-        `${API_BASE_URL}/tarefas/${id}/`,
-        { arquivado: false },
-      );
+      const res = await api.patch(`tarefas/${id}/`, { arquivado: false });
       setTarefas(
         tarefas.map((item) =>
           item.id === id ? { ...item, ...res.data } : item,
@@ -75,7 +62,7 @@ export default function useTaskOperations({
 
   const aoExcluirTarefaPermanentemente = async (id) => {
     try {
-      await axios.delete(`${API_BASE_URL}/tarefas/${id}/`);
+      await api.delete(`tarefas/${id}/`);
       setTarefas(tarefas.filter((item) => item.id !== id));
       if (tarefaModal?.id === id) setTarefaModal(null);
     } catch (error) {
@@ -87,13 +74,10 @@ export default function useTaskOperations({
     const tarefa = tarefas.find((t) => t.id === parseInt(tarefaId));
     if (!tarefa || tarefa.status === novoStatus) return;
     try {
-      const res = await axios.put(
-        `${API_BASE_URL}/tarefas/${tarefaId}/`,
-        {
-          ...tarefa,
-          status: novoStatus,
-        },
-      );
+      const res = await api.put(`tarefas/${tarefaId}/`, {
+        ...tarefa,
+        status: novoStatus,
+      });
       setTarefas(
         tarefas.map((t) => (t.id === parseInt(tarefaId) ? res.data : t)),
       );
@@ -110,10 +94,7 @@ export default function useTaskOperations({
         concluida: false,
         tarefa: tarefaId,
       };
-      const res = await axios.post(
-        `${API_BASE_URL}/subtarefas/`,
-        novaSub,
-      );
+      const res = await api.post("subtarefas/", novaSub);
 
       const novasTarefas = tarefas.map((t) => {
         if (t.id === tarefaId) {
@@ -134,13 +115,10 @@ export default function useTaskOperations({
 
   const aoToggleSubtarefa = async (sub, tarefaId = null) => {
     try {
-      const res = await axios.put(
-        `${API_BASE_URL}/subtarefas/${sub.id}/`,
-        {
-          ...sub,
-          concluida: !sub.concluida,
-        },
-      );
+      const res = await api.put(`subtarefas/${sub.id}/`, {
+        ...sub,
+        concluida: !sub.concluida,
+      });
 
       const tId = tarefaId || sub.tarefa;
       const novasTarefas = tarefas.map((t) => {
@@ -166,7 +144,7 @@ export default function useTaskOperations({
 
   const aoDeletarSubtarefa = async (subId, tarefaId) => {
     try {
-      await axios.delete(`${API_BASE_URL}/subtarefas/${subId}/`);
+      await api.delete(`subtarefas/${subId}/`);
       const novasTarefas = tarefas.map((t) => {
         if (t.id === tarefaId) {
           return {
@@ -202,8 +180,8 @@ export default function useTaskOperations({
             : tarefaModal.projeto,
       };
 
-      const res = await axios.put(
-        `${API_BASE_URL}/tarefas/${tarefaModal.id}/`,
+      const res = await api.put(
+        `tarefas/${tarefaModal.id}/`,
         dadosAtualizados,
       );
 

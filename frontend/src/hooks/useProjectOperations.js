@@ -1,5 +1,4 @@
-import axios from "axios";
-import { API_BASE_URL } from "../api";
+import api from "../api";
 
 export default function useProjectOperations({
   clientes,
@@ -14,11 +13,13 @@ export default function useProjectOperations({
 }) {
   const aoCriarClienteNovo = async (dadosCliente) => {
     try {
-      const codigoGerado = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const codigoGerado =
+        dadosCliente.codigo_acesso ||
+        Math.random().toString(36).substring(2, 8).toUpperCase();
       const dadosComCodigo = { ...dadosCliente, codigo_acesso: codigoGerado };
 
-      const res = await axios.post(`${API_BASE_URL}/clientes/`, dadosComCodigo);
-      setClientes([...clientes, res.data]);
+      const res = await api.post("clientes/", dadosComCodigo);
+      setClientes((prev) => [...prev, res.data]);
       return res.data;
     } catch (error) {
       console.error("Erro ao criar novo cliente:", error);
@@ -29,12 +30,9 @@ export default function useProjectOperations({
   const aoSalvarProjeto = async (dadosProjeto) => {
     try {
       if (dadosProjeto.id) {
-        await axios.put(
-          `${API_BASE_URL}/projetos/${dadosProjeto.id}/`,
-          dadosProjeto,
-        );
+        await api.put(`projetos/${dadosProjeto.id}/`, dadosProjeto);
       } else {
-        await axios.post(`${API_BASE_URL}/projetos/`, dadosProjeto);
+        await api.post("projetos/", dadosProjeto);
       }
       carregarDados();
       if (aoFecharModalObra) aoFecharModalObra();
@@ -56,10 +54,7 @@ export default function useProjectOperations({
         variante: "aviso",
         aoConfirmar: async () => {
           try {
-            const res = await axios.patch(
-              `${API_BASE_URL}/projetos/${id}/`,
-              { arquivado: true },
-            );
+            const res = await api.patch(`projetos/${id}/`, { arquivado: true });
             setProjetos(projetos.map((p) => (p.id === id ? res.data : p)));
           } catch (error) {
             console.error("Erro ao arquivar obra:", error);
@@ -74,7 +69,7 @@ export default function useProjectOperations({
         variante: "perigo",
         aoConfirmar: async () => {
           try {
-            await axios.delete(`${API_BASE_URL}/projetos/${id}/`);
+            await api.delete(`projetos/${id}/`);
             setProjetos(projetos.filter((p) => p.id !== id));
             setTarefas(tarefas.filter((t) => t.projeto !== id));
           } catch (error) {
@@ -93,10 +88,7 @@ export default function useProjectOperations({
       variante: "padrao",
       aoConfirmar: async () => {
         try {
-          const res = await axios.patch(
-            `${API_BASE_URL}/projetos/${id}/`,
-            { arquivado: false },
-          );
+          const res = await api.patch(`projetos/${id}/`, { arquivado: false });
           setProjetos(projetos.map((p) => (p.id === id ? res.data : p)));
         } catch (error) {
           console.error("Erro ao restaurar obra:", error);
@@ -113,7 +105,7 @@ export default function useProjectOperations({
       variante: "aviso",
       aoConfirmar: async () => {
         try {
-          await axios.delete(`${API_BASE_URL}/clientes/${id}/`);
+          await api.delete(`clientes/${id}/`);
           setClientes(
             clientes.map((c) => (c.id === id ? { ...c, deletado: true } : c)),
           );
@@ -127,10 +119,7 @@ export default function useProjectOperations({
 
   const aoEditarCliente = async (id, dadosCliente) => {
     try {
-      const res = await axios.patch(
-        `${API_BASE_URL}/clientes/${id}/`,
-        dadosCliente,
-      );
+      const res = await api.patch(`clientes/${id}/`, dadosCliente);
       setClientes(clientes.map((c) => (c.id === id ? res.data : c)));
       return res.data;
     } catch (error) {
@@ -148,9 +137,7 @@ export default function useProjectOperations({
       variante: "padrao",
       aoConfirmar: async () => {
         try {
-          const res = await axios.patch(`${API_BASE_URL}/clientes/${id}/`, {
-            deletado: false,
-          });
+          const res = await api.patch(`clientes/${id}/`, { deletado: false });
           setClientes(clientes.map((c) => (c.id === id ? res.data : c)));
         } catch (error) {
           console.error("Erro ao restaurar cliente:", error);

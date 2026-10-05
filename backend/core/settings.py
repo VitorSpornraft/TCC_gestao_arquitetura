@@ -15,9 +15,12 @@ SECRET_KEY = os.environ.get(
     'django-insecure-8be$k0-%an_8obab$e&dipw!fta0tndj__+gi%s#ku6u2)4m79' # Fallback para dev local
 )
 
+# Detecta se o ambiente atual é a nuvem do Render (produção)
+IS_PRODUCTION = bool(os.environ.get('RENDER') or os.environ.get('RENDER_SERVICE_ID'))
+
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG: Desativado por padrão (False) para mitigar vazamento de stack traces e dados internos em produção.
-DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 't')
+# DEBUG: Desativado em produção (Render) por segurança; em desenvolvimento local é True por padrão.
+DEBUG = os.environ.get('DEBUG', 'False' if IS_PRODUCTION else 'True').lower() in ('true', '1', 't')
 
 # ALLOWED_HOSTS: Restringe os domínios que podem acessar a aplicação, prevenindo ataques de HTTP Host Header Poisoning.
 allowed_hosts_env = os.environ.get('ALLOWED_HOSTS')
@@ -155,14 +158,14 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Reconhece conexões HTTPS terminadas pelo proxy reverso do Render (evita loops infinitos de redirecionamento)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Força o redirecionamento de requisições HTTP para HTTPS em produção (desativado em dev para permitir localhost)
-SECURE_SSL_REDIRECT = not DEBUG
+# Força o redirecionamento de requisições HTTP para HTTPS em produção no Render (desativado em dev para permitir localhost)
+SECURE_SSL_REDIRECT = IS_PRODUCTION and not DEBUG
 
-# Garante que os cookies de sessão sejam transmitidos apenas via HTTPS, prevenindo interceptação (MitM)
-SESSION_COOKIE_SECURE = not DEBUG
+# Garante que os cookies de sessão sejam transmitidos apenas via HTTPS em produção, prevenindo interceptação (MitM)
+SESSION_COOKIE_SECURE = IS_PRODUCTION and not DEBUG
 
 # Garante que o cookie CSRF trafegue exclusivamente por HTTPS em produção
-CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = IS_PRODUCTION and not DEBUG
 
 # Ativa o cabeçalho X-XSS-Protection nos navegadores compatíveis para bloquear scripts maliciosos refletidos
 SECURE_BROWSER_XSS_FILTER = True

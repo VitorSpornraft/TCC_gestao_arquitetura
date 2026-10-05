@@ -9,17 +9,27 @@ const api = axios.create({
     baseURL: `${API_BASE_URL}/`,
 });
 
-// Interceptor para injetar o token JWT automaticamente em todas as requisições autenticadas
+// Interceptor para injetar o token JWT do arquiteto ou identificador do cliente automaticamente
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+        const clienteId = sessionStorage.getItem('cliente_id');
+        if (clienteId) {
+            config.headers['X-Cliente-ID'] = clienteId;
+        }
         return config;
     },
     (error) => Promise.reject(error)
 );
+
+// --- AUTENTICAÇÃO DO CLIENTE (PORTAL) ---
+export const loginCliente = async ({ telefone, codigo }) => {
+    const response = await api.post('auth/cliente-login/', { telefone, codigo });
+    return response.data;
+};
 
 // --- AÇÕES DE APROVAÇÃO E FEEDBACK DE ARQUIVOS ---
 export const aprovarArquivo = async (arquivoId) => {

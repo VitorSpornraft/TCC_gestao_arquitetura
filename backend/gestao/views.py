@@ -1,4 +1,5 @@
 import random
+import re
 from django.core.mail import send_mail
 from django.conf import settings
 from rest_framework import viewsets, generics, status
@@ -57,7 +58,13 @@ def get_cliente_do_usuario(user, request=None):
 
     # Suporte a identificador seguro via cabeçalho/parâmetro em portais de cliente
     if request:
-        cliente_id = request.query_params.get('cliente_id') or request.headers.get('X-Cliente-ID')
+        req_params = getattr(request, 'query_params', None) or getattr(request, 'GET', {})
+        cliente_id = req_params.get('cliente_id')
+        if not cliente_id and hasattr(request, 'headers'):
+            cliente_id = request.headers.get('X-Cliente-ID')
+        elif not cliente_id and hasattr(request, 'META'):
+            cliente_id = request.META.get('HTTP_X_CLIENTE_ID')
+
         if cliente_id:
             return Cliente.objects.filter(id=cliente_id, deletado=False).first()
 
@@ -262,6 +269,74 @@ class RedefinirSenhaView(APIView):
             {"mensagem": "Senha redefinida com sucesso! Você já pode fazer login com sua nova senha."},
             status=status.HTTP_200_OK
         )
+
+
+class ClienteLoginView(APIView):
+    """
+    Endpoint de login exclusivo para Clientes usando Telefone e Código de Acesso (PIN).
+    Retorna os dados do cliente e os projetos, pastas e arquivos autorizados para visualização.
+    Protegido com ScopedRateThrottle para prevenir força bruta no PIN.
+    """
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'auth'
+
+    def post(self, request):
+        telefone_raw = str(request.data.get('telefone', '')).strip()
+        codigo_raw = str(request.data.get('codigo', '')).strip().upper()
+
+        if not telefone_raw or not codigo_raw:
+            return Response(
+                {"erro": "Por favor, informe o telefone e o código de acesso."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        tel_digitado = re.sub(r'\D', '', telefone_raw)
+        if not tel_digitado:
+            return Response(
+                {"erro": "Telefone inválido."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Busca clientes ativos com o código de acesso informado
+        candidatos = Cliente.objects.filter(
+            codigo_acesso__iexact=codigo_raw,
+            deletado=False
+        )
+
+        cliente_encontrado = None
+        for c in candidatos:
+            tel_banco = re.sub(r'\D', '', c.telefone or '')
+            ddd_banco = re.sub(r'\D', '', c.ddd or '')
+            completo_banco = f"{ddd_banco}{tel_banco}"
+
+            # Validações flexíveis: com DDD, sem DDD ou sufixo
+            if (
+                tel_digitado == completo_banco or
+                tel_digitado == tel_banco or
+                (len(tel_digitado) >= 8 and completo_banco.endswith(tel_digitado)) or
+                (len(tel_banco) >= 8 and tel_digitado.endswith(tel_banco))
+            ):
+                cliente_encontrado = c
+                break
+
+        if not cliente_encontrado:
+            return Response(
+                {"erro": "Telefone ou código de acesso inválidos."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Carrega os dados permitidos para este cliente
+        projetos = Projeto.objects.filter(cliente=cliente_encontrado, arquivado=False)
+        pastas = Pasta.objects.filter(projeto__cliente=cliente_encontrado, visivel_cliente=True)
+        arquivos = Arquivo.objects.filter(projeto__cliente=cliente_encontrado, visivel_cliente=True)
+
+        return Response({
+            "cliente": ClienteSerializer(cliente_encontrado).data,
+            "projetos": ProjetoSerializer(projetos, many=True).data,
+            "pastas": PastaSerializer(pastas, many=True).data,
+            "arquivos": ArquivoSerializer(arquivos, many=True).data,
+        }, status=status.HTTP_200_OK)
 
 
 # ==============================================================================

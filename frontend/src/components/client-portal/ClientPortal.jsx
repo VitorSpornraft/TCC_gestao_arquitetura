@@ -2,20 +2,32 @@ import { useState, useEffect } from 'react';
 import { getFileUrl, formatarNomeArquivo } from '../client-explorer/fileUtils';
 import ApprovalStatusBadge from '../common/ApprovalStatusBadge';
 import ClientFileViewerModal from './ClientFileViewerModal';
+import { loginCliente } from '../../api';
 
 export default function ClientPortal({ clientes, projetos, pastas, arquivos, onVoltar, onAtualizarDados }) {
   const [clienteLogado, setClienteLogado] = useState(null);
   const [telefone, setTelefone] = useState('');
   const [codigo, setCodigo] = useState('');
   const [erro, setErro] = useState('');
+  const [carregando, setCarregando] = useState(false);
 
   const [projetoAberto, setProjetoAberto] = useState(null);
   const [arquivoModal, setArquivoModal] = useState(null);
+  const [projetosLocais, setProjetosLocais] = useState(projetos || []);
+  const [pastasLocais, setPastasLocais] = useState(pastas || []);
   const [arquivosLocais, setArquivosLocais] = useState(arquivos || []);
 
   useEffect(() => {
-    setArquivosLocais(arquivos || []);
+    if (arquivos && arquivos.length > 0) setArquivosLocais(arquivos);
   }, [arquivos]);
+
+  useEffect(() => {
+    if (projetos && projetos.length > 0) setProjetosLocais(projetos);
+  }, [projetos]);
+
+  useEffect(() => {
+    if (pastas && pastas.length > 0) setPastasLocais(pastas);
+  }, [pastas]);
 
   const handleArquivoAtualizado = (arqAtualizado) => {
     setArquivosLocais((prev) =>
@@ -25,32 +37,63 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
     if (onAtualizarDados) onAtualizarDados();
   };
 
-  // --- LÓGICA DE LOGIN DO CLIENTE (Com validação inteligente de DDD) ---
-  const handleLogin = (e) => {
+  // --- LÓGICA DE LOGIN DO CLIENTE (Com autenticação na API e fallback seguro) ---
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setErro('');
+    setCarregando(true);
 
-    // Remove tudo que não for número (tira espaços, parênteses, traços)
-    const telDigitado = telefone.replace(/\D/g, '');
+    try {
+      // 1. Tenta autenticação direta na API Django REST (retorna dados isolados do cliente)
+      const data = await loginCliente({ telefone, codigo });
+      if (data && data.cliente) {
+        sessionStorage.setItem('cliente_id', data.cliente.id);
+        setClienteLogado(data.cliente);
+        if (data.projetos) setProjetosLocais(data.projetos);
+        if (data.pastas) setPastasLocais(data.pastas);
+        if (data.arquivos) setArquivosLocais(data.arquivos);
+        return;
+      }
+    } catch (apiError) {
+      // 2. Se a API estiver offline ou dados já estiverem pré-carregados nas props, tenta validação local
+      const telDigitado = telefone.replace(/\D/g, '');
 
-    const clienteEncontrado = clientes.find((c) => {
-      const telBanco = (c.telefone || '').replace(/\D/g, '');
-      const dddBanco = (c.ddd || '').replace(/\D/g, '');
+      const clienteEncontrado = (clientes || []).find((c) => {
+        const telBanco = (c.telefone || '').replace(/\D/g, '');
+        const dddBanco = (c.ddd || '').replace(/\D/g, '');
 
-      const digitouComDDD = telDigitado === `${dddBanco}${telBanco}`;
-      const digitouSoNumero = telDigitado === telBanco;
+        const digitouComDDD = telDigitado === `${dddBanco}${telBanco}`;
+        const digitouSoNumero = telDigitado === telBanco;
 
-      const telefoneBate = digitouComDDD || digitouSoNumero;
-      const codigoBate = (c.codigo_acesso || '').toUpperCase() === codigo.toUpperCase();
+        const telefoneBate = digitouComDDD || digitouSoNumero;
+        const codigoBate = (c.codigo_acesso || '').trim().toUpperCase() === codigo.trim().toUpperCase();
 
-      return telefoneBate && codigoBate;
-    });
+        return telefoneBate && codigoBate;
+      });
 
-    if (clienteEncontrado) {
-      setClienteLogado(clienteEncontrado);
-      setErro('');
-    } else {
-      setErro('Telefone ou código de acesso inválidos.');
+      if (clienteEncontrado) {
+        sessionStorage.setItem('cliente_id', clienteEncontrado.id);
+        setClienteLogado(clienteEncontrado);
+        setErro('');
+      } else {
+        const msgApi = apiError.response?.data?.erro;
+        setErro(msgApi || 'Telefone ou código de acesso inválidos.');
+      }
+    } finally {
+      setCarregando(false);
     }
+  };
+
+  const handleVoltar = () => {
+    sessionStorage.removeItem('cliente_id');
+    setClienteLogado(null);
+    if (onVoltar) onVoltar();
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('cliente_id');
+    setClienteLogado(null);
+    setProjetoAberto(null);
   };
 
   // --- TELA DE LOGIN ---
@@ -106,16 +149,21 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer transition-all active:scale-[0.98]"
+                disabled={carregando}
+                className={`w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white transition-all active:scale-[0.98] ${
+                  carregando
+                    ? 'bg-indigo-400 cursor-not-allowed'
+                    : 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+                }`}
               >
-                Acessar Documentos
+                {carregando ? 'Acessando...' : 'Acessar Documentos'}
               </button>
             </div>
           </form>
 
           <div className="mt-8 pt-6 border-t border-slate-100 text-center">
             <button
-              onClick={onVoltar}
+              onClick={handleVoltar}
               className="text-sm font-medium text-slate-400 hover:text-slate-700 cursor-pointer transition-colors flex items-center justify-center gap-1 w-full"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -131,16 +179,22 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
   }
 
   // --- TELA DO DASHBOARD DO CLIENTE (LOGADO) ---
-  const meusProjetos = projetos.filter((p) => String(p.cliente) === String(clienteLogado.id));
+  const listaProjetos = projetosLocais.length > 0 ? projetosLocais : (projetos || []);
+  const listaPastas = pastasLocais.length > 0 ? pastasLocais : (pastas || []);
+  const listaArquivos = arquivosLocais.length > 0 ? arquivosLocais : (arquivos || []);
+
+  const meusProjetos = listaProjetos.filter(
+    (p) => String(typeof p.cliente === 'object' ? p.cliente?.id : p.cliente) === String(clienteLogado.id)
+  );
 
   // Se o cliente abriu um projeto, mostramos os arquivos dele
   if (projetoAberto) {
-    const pastasVisiveis = pastas.filter(
+    const pastasVisiveis = listaPastas.filter(
       (p) =>
         String(typeof p.projeto === 'object' ? p.projeto?.id : p.projeto) === String(projetoAberto.id) &&
         p.visivel_cliente
     );
-    const arquivosVisiveis = arquivosLocais.filter(
+    const arquivosVisiveis = listaArquivos.filter(
       (a) =>
         String(typeof a.projeto === 'object' ? a.projeto?.id : a.projeto) === String(projetoAberto.id) &&
         a.visivel_cliente &&
@@ -283,7 +337,7 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
             <p className="text-sm text-slate-500 mt-1">Bem-vindo ao seu portal de acompanhamento de obras.</p>
           </div>
           <button
-            onClick={() => setClienteLogado(null)}
+            onClick={handleLogout}
             className="px-4 py-2.5 text-sm font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors cursor-pointer border border-rose-100 shadow-sm flex items-center gap-2"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

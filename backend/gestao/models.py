@@ -21,6 +21,19 @@ class Cliente(models.Model):
     deletado = models.BooleanField(default=False)
     criado_em = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        if not self.codigo_acesso:
+            import random, string
+            chars = string.ascii_uppercase + string.digits
+            while True:
+                codigo = ''.join(random.choices(chars, k=6))
+                if not Cliente.objects.filter(codigo_acesso=codigo).exists():
+                    self.codigo_acesso = codigo
+                    break
+        else:
+            self.codigo_acesso = self.codigo_acesso.strip().upper()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.nome
 

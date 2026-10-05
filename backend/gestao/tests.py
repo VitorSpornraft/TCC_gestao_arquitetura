@@ -288,3 +288,48 @@ class SecurityAndIsolationTestCase(TestCase):
         )
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertIn('mensagem', res.data)
+
+    def test_cliente_login_success(self):
+        """Cliente deve conseguir realizar login com telefone e código de acesso válido."""
+        from django.core.cache import cache
+        cache.clear()
+
+        res = self.client.post(
+            '/api/auth/cliente-login/',
+            {
+                'telefone': '(18) 99999-0001',
+                'codigo': 'cli1001'
+            },
+            secure=True
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['cliente']['nome'], 'Cliente Um')
+        self.assertIn('projetos', res.data)
+        self.assertIn('pastas', res.data)
+        self.assertIn('arquivos', res.data)
+
+    def test_cliente_login_invalid_code(self):
+        """Cliente com código incorreto deve receber 401 Unauthorized."""
+        from django.core.cache import cache
+        cache.clear()
+
+        res = self.client.post(
+            '/api/auth/cliente-login/',
+            {
+                'telefone': '18997123456',
+                'codigo': 'ERR999'
+            },
+            secure=True
+        )
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn('erro', res.data)
+
+    def test_cliente_auto_generates_codigo_acesso_on_save(self):
+        """Novo cliente sem codigo_acesso deve receber código de 6 caracteres gerado automaticamente."""
+        novo_cli = Cliente.objects.create(
+            nome='Cliente Sem Codigo Inicial',
+            ddd='11',
+            telefone='98888-7777'
+        )
+        self.assertTrue(bool(novo_cli.codigo_acesso))
+        self.assertEqual(len(novo_cli.codigo_acesso), 6)
