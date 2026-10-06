@@ -181,8 +181,9 @@ STORAGES = {
     },
 }
 
-# Compatibilidade para versões do Django anteriores a 4.2 ou bibliotecas legadas
+# Compatibilidade para versões do Django anteriores a 4.2 ou bibliotecas legadas (ex: django-cloudinary-storage)
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.RawMediaCloudinaryStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ==============================================================================
 # SEGURANÇA: CABEÇALHOS HTTP E FORÇAR HTTPS
