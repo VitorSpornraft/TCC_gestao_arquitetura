@@ -183,7 +183,7 @@ STORAGES = {
 
 # Compatibilidade para versões do Django anteriores a 4.2 ou bibliotecas legadas (ex: django-cloudinary-storage)
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.RawMediaCloudinaryStorage'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Impede o WhiteNoise de abortar o build caso encontre referências a arquivos faltantes no CSS (MissingFileError)
 WHITENOISE_MANIFEST_STRICT = False
