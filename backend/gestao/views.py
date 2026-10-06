@@ -288,43 +288,48 @@ class ClienteLoginView(APIView):
     throttle_scope = 'auth'
 
     def post(self, request):
-        telefone_raw = str(request.data.get('telefone', '')).strip()
-        codigo_raw = str(request.data.get('codigo', '')).strip().upper()
+        telefone_raw = str(request.data.get('telefone', '') or '').strip()
+        codigo_raw = str(request.data.get('codigo', '') or request.data.get('codigo_acesso', '') or '').strip().upper()
 
-        if not telefone_raw or not codigo_raw:
+        if not codigo_raw and not telefone_raw:
             return Response(
-                {"erro": "Por favor, informe o telefone e o código de acesso."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        tel_digitado = re.sub(r'\D', '', telefone_raw)
-        if not tel_digitado:
-            return Response(
-                {"erro": "Telefone inválido."},
+                {"erro": "Por favor, informe o código de acesso."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         # Busca clientes ativos com o código de acesso informado
-        candidatos = Cliente.objects.filter(
-            codigo_acesso__iexact=codigo_raw,
-            deletado=False
-        )
+        candidatos = Cliente.objects.filter(deletado=False)
+        if codigo_raw:
+            candidatos = candidatos.filter(codigo_acesso__iexact=codigo_raw)
 
+        if not candidatos.exists():
+            return Response(
+                {"erro": "Código de acesso ou telefone inválidos."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        tel_digitado = re.sub(r'\D', '', telefone_raw)
         cliente_encontrado = None
-        for c in candidatos:
-            tel_banco = re.sub(r'\D', '', c.telefone or '')
-            ddd_banco = re.sub(r'\D', '', c.ddd or '')
-            completo_banco = f"{ddd_banco}{tel_banco}"
 
-            # Validações flexíveis: com DDD, sem DDD ou sufixo
-            if (
-                tel_digitado == completo_banco or
-                tel_digitado == tel_banco or
-                (len(tel_digitado) >= 8 and completo_banco.endswith(tel_digitado)) or
-                (len(tel_banco) >= 8 and tel_digitado.endswith(tel_banco))
-            ):
-                cliente_encontrado = c
-                break
+        if tel_digitado:
+            for c in candidatos:
+                tel_banco = re.sub(r'\D', '', c.telefone or '')
+                ddd_banco = re.sub(r'\D', '', c.ddd or '')
+                completo_banco = f"{ddd_banco}{tel_banco}"
+
+                # Validações flexíveis: com DDD, sem DDD ou sufixo
+                if (
+                    tel_digitado == completo_banco or
+                    tel_digitado == tel_banco or
+                    (len(tel_digitado) >= 8 and completo_banco.endswith(tel_digitado)) or
+                    (len(tel_banco) >= 8 and tel_digitado.endswith(tel_banco))
+                ):
+                    cliente_encontrado = c
+                    break
+        else:
+            # Se não informou telefone, mas informou código de acesso único válido
+            if codigo_raw and candidatos.count() == 1:
+                cliente_encontrado = candidatos.first()
 
         if not cliente_encontrado:
             return Response(

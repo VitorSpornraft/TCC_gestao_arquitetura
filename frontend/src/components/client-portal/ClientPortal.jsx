@@ -49,15 +49,42 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
     setErro('');
     setCarregando(true);
 
+    const codigoLimpo = (codigo || '').trim().toUpperCase();
+    const telLimpo = (telefone || '').trim();
+
+    if (!codigoLimpo && !telLimpo) {
+      setErro('Por favor, informe seu código de acesso (PIN).');
+      setCarregando(false);
+      return;
+    }
+
     try {
-      // 1. Tenta autenticação direta na API Django REST (retorna dados isolados do cliente)
-      const data = await loginCliente({ telefone, codigo });
-      if (data && data.cliente) {
+      // 1. Aciona endpoint do backend (/api/auth/cliente-login/)
+      const data = await loginCliente({ telefone: telLimpo, codigo: codigoLimpo });
+      if (data && (data.cliente || data.user)) {
+        const clienteInfo = data.cliente || {
+          id: data.user.cliente_id || data.user.id,
+          nome: data.user.nome || data.user.first_name || 'Cliente',
+          ...data.user,
+        };
+
+        // Salva tokens JWT no storage (tanto local quanto session para compatibilidade total)
         if (data.access) {
+          localStorage.setItem('token', data.access);
           sessionStorage.setItem('token', data.access);
+          localStorage.setItem('access', data.access);
+          sessionStorage.setItem('access', data.access);
         }
-        sessionStorage.setItem('cliente_id', data.cliente.id);
-        setClienteLogado(data.cliente);
+        if (data.refresh) {
+          localStorage.setItem('refresh', data.refresh);
+          sessionStorage.setItem('refresh', data.refresh);
+        }
+        if (clienteInfo?.id) {
+          localStorage.setItem('cliente_id', String(clienteInfo.id));
+          sessionStorage.setItem('cliente_id', String(clienteInfo.id));
+        }
+
+        setClienteLogado(clienteInfo);
         if (data.projetos) setProjetosLocais(data.projetos);
         if (data.pastas) setPastasLocais(data.pastas);
         if (data.arquivos) setArquivosLocais(data.arquivos);
@@ -65,28 +92,31 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
       }
     } catch (apiError) {
       // 2. Se a API estiver offline ou dados já estiverem pré-carregados nas props, tenta validação local
-      const telDigitado = telefone.replace(/\D/g, '');
+      const telDigitado = telLimpo.replace(/\D/g, '');
 
       const clienteEncontrado = (clientes || []).find((c) => {
-        const telBanco = (c.telefone || '').replace(/\D/g, '');
-        const dddBanco = (c.ddd || '').replace(/\D/g, '');
+        const codigoBate = (c.codigo_acesso || '').trim().toUpperCase() === codigoLimpo;
+        if (!codigoBate) return false;
 
-        const digitouComDDD = telDigitado === `${dddBanco}${telBanco}`;
-        const digitouSoNumero = telDigitado === telBanco;
+        if (telDigitado) {
+          const telBanco = (c.telefone || '').replace(/\D/g, '');
+          const dddBanco = (c.ddd || '').replace(/\D/g, '');
+          const digitouComDDD = telDigitado === `${dddBanco}${telBanco}`;
+          const digitouSoNumero = telDigitado === telBanco;
+          return digitouComDDD || digitouSoNumero;
+        }
 
-        const telefoneBate = digitouComDDD || digitouSoNumero;
-        const codigoBate = (c.codigo_acesso || '').trim().toUpperCase() === codigo.trim().toUpperCase();
-
-        return telefoneBate && codigoBate;
+        return true;
       });
 
       if (clienteEncontrado) {
-        sessionStorage.setItem('cliente_id', clienteEncontrado.id);
+        localStorage.setItem('cliente_id', String(clienteEncontrado.id));
+        sessionStorage.setItem('cliente_id', String(clienteEncontrado.id));
         setClienteLogado(clienteEncontrado);
         setErro('');
       } else {
         const msgApi = apiError.response?.data?.erro;
-        setErro(msgApi || 'Telefone ou código de acesso inválidos.');
+        setErro(msgApi || 'Código de acesso ou telefone inválidos.');
       }
     } finally {
       setCarregando(false);
@@ -94,14 +124,18 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
   };
 
   const handleVoltar = () => {
+    localStorage.removeItem('cliente_id');
     sessionStorage.removeItem('cliente_id');
+    localStorage.removeItem('token');
     sessionStorage.removeItem('token');
     setClienteLogado(null);
     if (onVoltar) onVoltar();
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('cliente_id');
     sessionStorage.removeItem('cliente_id');
+    localStorage.removeItem('token');
     sessionStorage.removeItem('token');
     setClienteLogado(null);
     setProjetoAberto(null);
@@ -124,25 +158,25 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
         <div className="w-full max-w-md mt-8 bg-white py-8 px-6 shadow-xl shadow-slate-200/50 rounded-3xl border border-slate-100">
           <form className="space-y-6" onSubmit={handleLogin}>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Telefone</label>
-              <input
-                type="text"
-                required
-                value={telefone}
-                onChange={(e) => setTelefone(e.target.value)}
-                className="block w-full rounded-xl border border-slate-300 px-4 py-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-900 font-medium"
-                placeholder="Número exato do cadastro"
-              />
-            </div>
-            <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">Código de Acesso (PIN)</label>
               <input
                 type="text"
                 required
                 value={codigo}
                 onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-                className="block w-full rounded-xl border border-slate-300 px-4 py-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-900 font-bold uppercase tracking-wider"
-                placeholder="Ex: A7X9B2"
+                className="block w-full rounded-xl border border-slate-300 px-4 py-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-900 font-bold uppercase tracking-wider text-center text-lg"
+                placeholder="Ex: CLI1020"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Telefone (Opcional)</label>
+              <input
+                type="text"
+                value={telefone}
+                onChange={(e) => setTelefone(e.target.value)}
+                className="block w-full rounded-xl border border-slate-300 px-4 py-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-900 font-medium"
+                placeholder="Telefone do cadastro (opcional)"
               />
             </div>
 
