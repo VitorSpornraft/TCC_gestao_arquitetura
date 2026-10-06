@@ -185,6 +185,9 @@ STORAGES = {
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.RawMediaCloudinaryStorage'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# Impede o WhiteNoise de abortar o build caso encontre referências a arquivos faltantes no CSS (MissingFileError)
+WHITENOISE_MANIFEST_STRICT = False
+
 # ==============================================================================
 # SEGURANÇA: CABEÇALHOS HTTP E FORÇAR HTTPS
 # ==============================================================================
