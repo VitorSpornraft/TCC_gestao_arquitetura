@@ -38,7 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'cloudinary_storage',
     'django.contrib.staticfiles',
+    'cloudinary',
     'rest_framework',
     'corsheaders',
     'gestao',
@@ -150,6 +152,37 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# ==============================================================================
+# ARMAZENAMENTO DE ARQUIVOS (CLOUDINARY STORAGE)
+# ==============================================================================
+
+# Lê a URL de conexão do Cloudinary definida no ambiente (Render ou .env)
+# Formato esperado: cloudinary://<API_KEY>:<API_SECRET>@<CLOUD_NAME>
+CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL')
+if CLOUDINARY_URL:
+    os.environ['CLOUDINARY_URL'] = CLOUDINARY_URL
+elif not IS_PRODUCTION:
+    # Em desenvolvimento/testes locais sem Cloudinary configurado, define valor de fallback para evitar erros de inicialização
+    os.environ.setdefault('CLOUDINARY_URL', 'cloudinary://dummy:dummy@dummy')
+
+CLOUDINARY_STORAGE = {
+    'CLOUDINARY_URL': os.environ.get('CLOUDINARY_URL'),
+}
+
+# CRÍTICO: Configuração do storage de arquivos para arquivos brutos (raw).
+# Garante suporte a PDFs, arquivos CAD (.dwg, .rvt, .skp) e imagens sem conversões destrutivas do Cloudinary.
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.RawMediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage" if not DEBUG else "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+# Compatibilidade para versões do Django anteriores a 4.2 ou bibliotecas legadas
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.RawMediaCloudinaryStorage'
 
 # ==============================================================================
 # SEGURANÇA: CABEÇALHOS HTTP E FORÇAR HTTPS

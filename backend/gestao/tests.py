@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -6,6 +6,13 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from gestao.models import Cliente, Projeto, Arquivo, Pasta, Tarefa
 
 
+@override_settings(
+    STORAGES={
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    },
+    DEFAULT_FILE_STORAGE="django.core.files.storage.FileSystemStorage"
+)
 class SecurityAndIsolationTestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -378,4 +385,21 @@ class SecurityAndIsolationTestCase(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.arq_interno.refresh_from_db()
         self.assertTrue(self.arq_interno.visivel_cliente)
+
+
+class CloudinaryConfigurationTestCase(TestCase):
+    def test_cloudinary_storage_settings(self):
+        """Verifica se o storage padrão de arquivos e INSTALLED_APPS foram devidamente configurados para Cloudinary."""
+        from core import settings as app_settings
+        self.assertIn('cloudinary_storage', app_settings.INSTALLED_APPS)
+        self.assertIn('cloudinary', app_settings.INSTALLED_APPS)
+        self.assertEqual(
+            app_settings.STORAGES['default']['BACKEND'],
+            'cloudinary_storage.storage.RawMediaCloudinaryStorage'
+        )
+        self.assertEqual(
+            app_settings.DEFAULT_FILE_STORAGE,
+            'cloudinary_storage.storage.RawMediaCloudinaryStorage'
+        )
+        self.assertIn('CLOUDINARY_URL', app_settings.CLOUDINARY_STORAGE)
 
