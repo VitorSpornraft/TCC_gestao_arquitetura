@@ -14,16 +14,47 @@ api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+            config.headers = config.headers || {};
+            config.headers['Authorization'] = `Bearer ${token}`;
+            if (typeof config.headers.set === 'function') {
+                config.headers.set('Authorization', `Bearer ${token}`);
+            }
         }
         const clienteId = sessionStorage.getItem('cliente_id');
         if (clienteId) {
+            config.headers = config.headers || {};
             config.headers['X-Cliente-ID'] = clienteId;
+            if (typeof config.headers.set === 'function') {
+                config.headers.set('X-Cliente-ID', clienteId);
+            }
         }
         return config;
     },
     (error) => Promise.reject(error)
 );
+
+// --- ATUALIZAÇÃO DE VISIBILIDADE DE ARQUIVOS E PASTAS ---
+export const atualizarVisibilidadeArquivo = async (arquivoId, visivelCliente) => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const response = await api.patch(
+        `arquivos/${arquivoId}/`,
+        { visivel_cliente: visivelCliente },
+        { headers }
+    );
+    return response.data;
+};
+
+export const atualizarVisibilidadePasta = async (pastaId, visivelCliente) => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const response = await api.patch(
+        `pastas/${pastaId}/`,
+        { visivel_cliente: visivelCliente },
+        { headers }
+    );
+    return response.data;
+};
 
 // --- AUTENTICAÇÃO DO CLIENTE (PORTAL) ---
 export const loginCliente = async ({ telefone, codigo }) => {

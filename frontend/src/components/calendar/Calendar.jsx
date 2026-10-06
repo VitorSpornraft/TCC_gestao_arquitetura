@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { API_BASE_URL } from "../../api";
+import api from "../../api";
 import CalendarGrid from "./CalendarGrid";
 import DailyAppointments from "./DailyAppointments";
 import EventModal from "./EventModal";
@@ -79,16 +78,16 @@ export default function Calendar({ projetos = [], tarefas = [] }) {
       };
 
       if (eventoModal.id) {
-        const resposta = await axios.put(
-          `${API_BASE_URL}/eventos/${eventoModal.id}/`,
+        const resposta = await api.put(
+          `eventos/${eventoModal.id}/`,
           payload,
         );
         setEventos(
           eventos.map((e) => (e.id === eventoModal.id ? resposta.data : e)),
         );
       } else {
-        const resposta = await axios.post(
-          `${API_BASE_URL}/eventos/`,
+        const resposta = await api.post(
+          "eventos/",
           payload,
         );
         setEventos([...eventos, resposta.data]);
@@ -102,7 +101,7 @@ export default function Calendar({ projetos = [], tarefas = [] }) {
 
   const toggleConcluidoEvento = async (id, novoStatus) => {
     try {
-      const resposta = await axios.patch(`${API_BASE_URL}/eventos/${id}/`, {
+      const resposta = await api.patch(`eventos/${id}/`, {
         concluido: novoStatus,
       });
       setEventos(eventos.map((e) => (e.id === id ? resposta.data : e)));
@@ -120,7 +119,7 @@ export default function Calendar({ projetos = [], tarefas = [] }) {
       variante: "perigo",
       aoConfirmar: async () => {
         try {
-          await axios.delete(`${API_BASE_URL}/eventos/${id}/`);
+          await api.delete(`eventos/${id}/`);
           setEventos((prev) => prev.filter((e) => e.id !== id));
         } catch (error) {
           console.error("Erro ao excluir evento:", error);

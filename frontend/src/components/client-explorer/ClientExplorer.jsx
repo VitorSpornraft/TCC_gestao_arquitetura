@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import api from "../../api";
+import api, { atualizarVisibilidadeArquivo, atualizarVisibilidadePasta } from "../../api";
 import LinkTaskModal from "../modals/LinkTaskModal";
 import ConfirmCommitModal from "../modals/ConfirmCommitModal";
 import VersionHistoryModal from "../modals/VersionHistoryModal";
@@ -101,9 +101,7 @@ export default function ClientExplorer({
   const toggleVisibilidadeArquivo = async (e, arq) => {
     e.stopPropagation();
     try {
-      await api.patch(`arquivos/${arq.id}/`, {
-        visivel_cliente: !arq.visivel_cliente,
-      });
+      await atualizarVisibilidadeArquivo(arq.id, !arq.visivel_cliente);
       if (aoAtualizarDados) {
         await aoAtualizarDados();
       }
@@ -116,9 +114,7 @@ export default function ClientExplorer({
   const toggleVisibilidadePasta = async (e, pasta) => {
     e.stopPropagation();
     try {
-      await api.patch(`pastas/${pasta.id}/`, {
-        visivel_cliente: !pasta.visivel_cliente,
-      });
+      await atualizarVisibilidadePasta(pasta.id, !pasta.visivel_cliente);
       if (aoAtualizarDados) {
         await aoAtualizarDados();
       }
