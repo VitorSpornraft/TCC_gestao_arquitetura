@@ -40,24 +40,7 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
   // --- CONTROLE DE CLIQUE E PRÉ-VISUALIZAÇÃO DE ARQUIVOS ---
   const handleCliqueArquivo = (arq) => {
     if (!arq) return;
-    const urlFinal = getFileUrl(arq.arquivo) || arq.arquivo;
-
-    // Lógica para PDFs: Ao clicar, não abre o modal, abre diretamente em nova aba
-    if (isArquivoPdf(arq)) {
-      window.open(urlFinal, '_blank');
-      return;
-    }
-
-    // Lógica para Imagens (.png, .jpg, .jpeg): abre o modal de visualização
-    if (isArquivoImagem(arq)) {
-      setArquivoModal(arq);
-      return;
-    }
-
-    // Demais extensões: abre ou executa download em nova aba
-    if (urlFinal) {
-      window.open(urlFinal, '_blank');
-    }
+    setArquivoModal(arq);
   };
 
   // --- LÓGICA DE LOGIN DO CLIENTE (Com autenticação na API e fallback seguro) ---
@@ -285,7 +268,7 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
                           {nome}
                         </p>
                         <p className="text-[11px] font-medium text-slate-400 m-0 mt-0.5">
-                          {isArquivoPdf(arq) ? 'Clique para abrir PDF' : 'Clique para analisar'}
+                          Clique para analisar
                         </p>
                       </div>
                     </div>
@@ -307,7 +290,7 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
                         onClick={() => handleCliqueArquivo(arq)}
                         className="px-2.5 py-1 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
                       >
-                        {isArquivoPdf(arq) ? 'Abrir PDF' : isArquivoImagem(arq) ? 'Avaliar' : 'Visualizar'}
+                        Avaliar
                       </button>
                       <a
                         href={getFileUrl(arq.arquivo)}

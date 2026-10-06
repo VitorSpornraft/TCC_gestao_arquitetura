@@ -81,20 +81,7 @@ export default function ClientExplorer({
       return;
     }
 
-    const urlFinal = getFileUrl(arq.arquivo) || arq.arquivo;
-    if (isArquivoPdf(arq)) {
-      window.open(urlFinal, "_blank");
-      return;
-    }
-
-    if (isArquivoImagem(arq)) {
-      setArquivoVisualizando(arq);
-      return;
-    }
-
-    if (urlFinal) {
-      window.open(urlFinal, "_blank");
-    }
+    setArquivoVisualizando(arq);
   };
 
   // --- FUNÇÕES DE VISIBILIDADE DO CLIENTE ---
