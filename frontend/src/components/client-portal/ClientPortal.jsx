@@ -2,10 +2,28 @@ import { useState, useEffect } from 'react';
 import { getFileUrl, formatarNomeArquivo, isArquivoPdf, isArquivoImagem } from '../client-explorer/fileUtils';
 import ApprovalStatusBadge from '../common/ApprovalStatusBadge';
 import ClientFileViewerModal from './ClientFileViewerModal';
-import { loginCliente } from '../../api';
+import api, { loginCliente } from '../../api';
 
-export default function ClientPortal({ clientes, projetos, pastas, arquivos, onVoltar, onAtualizarDados }) {
-  const [clienteLogado, setClienteLogado] = useState(null);
+export default function ClientPortal({
+  clientes,
+  projetos,
+  pastas,
+  arquivos,
+  onVoltar,
+  onAtualizarDados,
+  onLoginSucesso,
+  onLogout,
+}) {
+  const [clienteLogado, setClienteLogado] = useState(() => {
+    try {
+      const role = localStorage.getItem('userRole') || sessionStorage.getItem('userRole');
+      if (role !== 'cliente') return null;
+      const salvo = localStorage.getItem('cliente_info') || sessionStorage.getItem('cliente_info');
+      return salvo ? JSON.parse(salvo) : null;
+    } catch {
+      return null;
+    }
+  });
   const [telefone, setTelefone] = useState('');
   const [codigo, setCodigo] = useState('');
   const [erro, setErro] = useState('');
@@ -29,6 +47,12 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
     if (pastas && pastas.length > 0) setPastasLocais(pastas);
   }, [pastas]);
 
+  useEffect(() => {
+    if (clienteLogado && onAtualizarDados) {
+      onAtualizarDados();
+    }
+  }, [clienteLogado?.id]);
+
   const handleArquivoAtualizado = (arqAtualizado) => {
     setArquivosLocais((prev) =>
       prev.map((a) => (a.id === arqAtualizado.id ? arqAtualizado : a))
@@ -43,7 +67,7 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
     setArquivoModal(arq);
   };
 
-  // --- LÓGICA DE LOGIN DO CLIENTE (Com validação estrita de Telefone e Código de Acesso) ---
+  // --- LÓGICA DE LOGIN DO CLIENTE (Com validação estrita de Telefone e PIN, e injeção síncrona de token) ---
   const handleLogin = async (e) => {
     e.preventDefault();
     setErro('');
@@ -74,12 +98,22 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
           ...data.user,
         };
 
-        // 2. Gestão de Sessão: salva access e refresh token no storage
-        if (data.access) {
-          localStorage.setItem('token', data.access);
-          sessionStorage.setItem('token', data.access);
-          localStorage.setItem('access', data.access);
-          sessionStorage.setItem('access', data.access);
+        const token = data.access;
+
+        // REGRA CRÍTICA 1: Atualização Imediata do header do Axios ANTES de atualizar navegação/estados
+        if (token) {
+          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        }
+
+        // REGRA CRÍTICA 2: Isolamento de Papéis (Role)
+        localStorage.setItem('userRole', 'cliente');
+        sessionStorage.setItem('userRole', 'cliente');
+
+        if (token) {
+          localStorage.setItem('token', token);
+          sessionStorage.setItem('token', token);
+          localStorage.setItem('access', token);
+          sessionStorage.setItem('access', token);
         }
         if (data.refresh) {
           localStorage.setItem('refresh', data.refresh);
@@ -89,9 +123,10 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
           localStorage.setItem('cliente_id', String(clienteInfo.id));
           sessionStorage.setItem('cliente_id', String(clienteInfo.id));
         }
+        localStorage.setItem('cliente_info', JSON.stringify(clienteInfo));
+        sessionStorage.setItem('cliente_info', JSON.stringify(clienteInfo));
 
-        // 3. Fecha a tela de login e libera a renderização do ClientExplorer / Obras
-        setClienteLogado(clienteInfo);
+        // 3. Atualiza dados locais recebidos da API
         if (data.projetos) {
           setProjetosLocais(data.projetos);
           if (data.projetos.length === 1) {
@@ -100,6 +135,16 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
         }
         if (data.pastas) setPastasLocais(data.pastas);
         if (data.arquivos) setArquivosLocais(data.arquivos);
+
+        // 4. Atualização síncrona do estado do cliente e notificação ao componente pai
+        setClienteLogado(clienteInfo);
+
+        if (onLoginSucesso) {
+          onLoginSucesso(clienteInfo);
+        }
+        if (onAtualizarDados) {
+          onAtualizarDados();
+        }
         return;
       }
       setErro('Código de acesso ou telefone inválidos.');
@@ -123,10 +168,15 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
         });
 
         if (clienteEncontrado) {
+          localStorage.setItem('userRole', 'cliente');
+          sessionStorage.setItem('userRole', 'cliente');
           localStorage.setItem('cliente_id', String(clienteEncontrado.id));
           sessionStorage.setItem('cliente_id', String(clienteEncontrado.id));
+          localStorage.setItem('cliente_info', JSON.stringify(clienteEncontrado));
+          sessionStorage.setItem('cliente_info', JSON.stringify(clienteEncontrado));
           setClienteLogado(clienteEncontrado);
           setErro('');
+          if (onLoginSucesso) onLoginSucesso(clienteEncontrado);
           return;
         }
       }
@@ -138,21 +188,40 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
   };
 
   const handleVoltar = () => {
+    delete api.defaults.headers.common['Authorization'];
+    localStorage.removeItem('userRole');
+    sessionStorage.removeItem('userRole');
     localStorage.removeItem('cliente_id');
     sessionStorage.removeItem('cliente_id');
+    localStorage.removeItem('cliente_info');
+    sessionStorage.removeItem('cliente_info');
     localStorage.removeItem('token');
     sessionStorage.removeItem('token');
+    localStorage.removeItem('access');
+    sessionStorage.removeItem('access');
+    localStorage.removeItem('refresh');
+    sessionStorage.removeItem('refresh');
     setClienteLogado(null);
     if (onVoltar) onVoltar();
   };
 
   const handleLogout = () => {
+    delete api.defaults.headers.common['Authorization'];
+    localStorage.removeItem('userRole');
+    sessionStorage.removeItem('userRole');
     localStorage.removeItem('cliente_id');
     sessionStorage.removeItem('cliente_id');
+    localStorage.removeItem('cliente_info');
+    sessionStorage.removeItem('cliente_info');
     localStorage.removeItem('token');
     sessionStorage.removeItem('token');
+    localStorage.removeItem('access');
+    sessionStorage.removeItem('access');
+    localStorage.removeItem('refresh');
+    sessionStorage.removeItem('refresh');
     setClienteLogado(null);
     setProjetoAberto(null);
+    if (onLogout) onLogout();
   };
 
   // --- TELA DE LOGIN ---
@@ -243,9 +312,14 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
   const listaPastas = pastasLocais.length > 0 ? pastasLocais : (pastas || []);
   const listaArquivos = arquivosLocais.length > 0 ? arquivosLocais : (arquivos || []);
 
-  const meusProjetos = listaProjetos.filter(
-    (p) => String(typeof p.cliente === 'object' ? p.cliente?.id : p.cliente) === String(clienteLogado.id)
-  );
+  const meusProjetos = listaProjetos.filter((p) => {
+    if (!clienteLogado?.id) return false;
+    const pClienteId = typeof p.cliente === 'object' ? p.cliente?.id : p.cliente;
+    if (pClienteId !== undefined && pClienteId !== null) {
+      return String(pClienteId) === String(clienteLogado.id);
+    }
+    return true;
+  });
 
   // Se o cliente abriu um projeto, mostramos os arquivos dele
   if (projetoAberto) {

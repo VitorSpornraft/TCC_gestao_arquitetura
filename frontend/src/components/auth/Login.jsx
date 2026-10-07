@@ -1,6 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
-import { API_BASE_URL } from "../../api";
+import api, { API_BASE_URL } from "../../api";
 import bgImage from "../../assets/imgLogin.jpg";
 import RecuperarSenhaModal from "./RecuperarSenhaModal";
 
@@ -21,14 +21,28 @@ export default function Login({ onLoginSucesso, onAbrirCadastro, onAbrirCliente 
         password,
       });
 
+      const token = res.data.access;
+
+      // 1. Atualização Imediata: injeta na instância do Axios ANTES de atualizar navegação
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      // 2. Isolamento de Papéis (Role): define como arquiteto e limpa dados do cliente
+      localStorage.setItem("userRole", "arquiteto");
+      sessionStorage.setItem("userRole", "arquiteto");
+      localStorage.removeItem("cliente_id");
+      sessionStorage.removeItem("cliente_id");
+      localStorage.removeItem("cliente_info");
+      sessionStorage.removeItem("cliente_info");
+
       const nomeParaSalvar = username.split("@")[0];
 
       if (lembrar) {
-        localStorage.setItem("token", res.data.access);
+        localStorage.setItem("token", token);
         localStorage.setItem("usuario_nome", nomeParaSalvar);
       } else {
-        sessionStorage.setItem("token", res.data.access);
+        sessionStorage.setItem("token", token);
         sessionStorage.setItem("usuario_nome", nomeParaSalvar);
+        localStorage.removeItem("token");
       }
 
       onLoginSucesso();

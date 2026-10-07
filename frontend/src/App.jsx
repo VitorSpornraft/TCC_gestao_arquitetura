@@ -14,11 +14,28 @@ import ClientPortal from "./components/client-portal/ClientPortal";
 import useWorkspaceData from "./hooks/useWorkspaceData";
 import useProjectOperations from "./hooks/useProjectOperations";
 import useTaskOperations from "./hooks/useTaskOperations";
+import api from "./api";
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [token, setToken] = useState(() => {
+    return localStorage.getItem("token") || sessionStorage.getItem("token") || null;
+  });
+
+  const [userRole, setUserRole] = useState(() => {
+    return localStorage.getItem("userRole") || sessionStorage.getItem("userRole") || null;
+  });
+
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    const t = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const role = localStorage.getItem("userRole") || sessionStorage.getItem("userRole");
+    return Boolean(t && role === "arquiteto");
+  });
+
   const [mostrarCadastro, setMostrarCadastro] = useState(false);
-  const [modoCliente, setModoCliente] = useState(false);
+  const [modoCliente, setModoCliente] = useState(() => {
+    const role = localStorage.getItem("userRole") || sessionStorage.getItem("userRole");
+    return role === "cliente";
+  });
 
   const {
     clientes,
@@ -43,19 +60,63 @@ export default function App() {
   const [tarefaModal, setTarefaModal] = useState(null);
   const [confirmacao, setConfirmacao] = useState(null);
 
+  // Inicialização e proteção de rotas no F5
   useEffect(() => {
-    const token =
+    const tokenAtual =
       localStorage.getItem("token") || sessionStorage.getItem("token");
-    if (token) {
-      setIsLoggedIn(true);
+    const roleAtual =
+      localStorage.getItem("userRole") || sessionStorage.getItem("userRole");
+
+    if (tokenAtual) {
+      // Garante injeção do header de autorização na instância do Axios
+      api.defaults.headers.common["Authorization"] = `Bearer ${tokenAtual}`;
+      setToken(tokenAtual);
+
+      if (roleAtual === "cliente") {
+        setUserRole("cliente");
+        setModoCliente(true);
+        setIsLoggedIn(false);
+        carregarDados();
+      } else if (roleAtual === "arquiteto") {
+        setUserRole("arquiteto");
+        setModoCliente(false);
+        setIsLoggedIn(true);
+        carregarDados();
+      }
+    } else {
+      setIsLoggedIn(false);
+      setUserRole(null);
+      setToken(null);
+    }
+  }, [carregarDados]);
+
+  // Recarrega dados ao trocar de abas (apenas se for arquiteto logado)
+  useEffect(() => {
+    if (isLoggedIn && userRole === "arquiteto") {
       carregarDados();
     }
-  }, [carregarDados, abaAtiva]);
+  }, [abaAtiva, isLoggedIn, userRole, carregarDados]);
 
   const fazerLogout = () => {
+    delete api.defaults.headers.common["Authorization"];
     localStorage.removeItem("token");
     sessionStorage.removeItem("token");
+    localStorage.removeItem("access");
+    sessionStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    sessionStorage.removeItem("refresh");
+    localStorage.removeItem("userRole");
+    sessionStorage.removeItem("userRole");
+    localStorage.removeItem("cliente_id");
+    sessionStorage.removeItem("cliente_id");
+    localStorage.removeItem("cliente_info");
+    sessionStorage.removeItem("cliente_info");
+    localStorage.removeItem("usuario_nome");
+    sessionStorage.removeItem("usuario_nome");
+    setToken(null);
     setIsLoggedIn(false);
+    setUserRole(null);
+    setModoCliente(false);
     setProjetoSelecionado(null);
   };
 
@@ -126,21 +187,34 @@ export default function App() {
     setTarefaModal,
   });
 
-  // --- FLUXO DE ENTRADA (ARQUITETO VS CLIENTE) ---
-  if (!isLoggedIn) {
-    if (modoCliente) {
-      return (
-        <ClientPortal
-          clientes={clientes}
-          projetos={projetos}
-          pastas={pastas}
-          arquivos={arquivos}
-          onVoltar={() => setModoCliente(false)}
-          onAtualizarDados={carregarDados}
-        />
-      );
-    }
+  // --- PROTEÇÃO DE ROTAS: CLIENTE NUNCA ACESSA O PAINEL DO ARQUITETO ---
+  if (userRole === "cliente" || modoCliente) {
+    return (
+      <ClientPortal
+        clientes={clientes}
+        projetos={projetos}
+        pastas={pastas}
+        arquivos={arquivos}
+        onVoltar={() => {
+          setModoCliente(false);
+          setUserRole(null);
+        }}
+        onAtualizarDados={carregarDados}
+        onLoginSucesso={(clienteInfo) => {
+          const t = localStorage.getItem("token") || sessionStorage.getItem("token");
+          setToken(t);
+          setUserRole("cliente");
+          setModoCliente(true);
+          setIsLoggedIn(false);
+          carregarDados();
+        }}
+        onLogout={fazerLogout}
+      />
+    );
+  }
 
+  // --- FLUXO DE ENTRADA: CADASTRO OU LOGIN DO ARQUITETO ---
+  if (!isLoggedIn || userRole !== "arquiteto") {
     if (mostrarCadastro) {
       return <Cadastro onVoltarLogin={() => setMostrarCadastro(false)} />;
     }
@@ -148,6 +222,9 @@ export default function App() {
     return (
       <Login
         onLoginSucesso={() => {
+          const t = localStorage.getItem("token") || sessionStorage.getItem("token");
+          setToken(t);
+          setUserRole("arquiteto");
           setIsLoggedIn(true);
           carregarDados();
         }}
