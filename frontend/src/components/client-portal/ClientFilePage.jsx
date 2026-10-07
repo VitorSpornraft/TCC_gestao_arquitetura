@@ -41,20 +41,39 @@ export default function ClientFilePage({ onAtualizarDados }) {
       if (!id) return;
       try {
         setCarregandoArquivo(true);
+        setErro('');
+
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        const clienteId = localStorage.getItem('cliente_id') || sessionStorage.getItem('cliente_id');
+        if (token) {
+          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        }
+
+        const clienteId =
+          localStorage.getItem('cliente_id') ||
+          sessionStorage.getItem('cliente_id') ||
+          cliente?.id;
+
+        const params = clienteId ? { cliente_id: String(clienteId) } : {};
         const headers = {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...(clienteId ? { 'X-Cliente-ID': String(clienteId) } : {}),
         };
-        const res = await api.get(`arquivos/${id}/`, { headers });
+
+        let res;
+        try {
+          res = await api.get(`arquivos/${id}/`, { params, headers });
+        } catch {
+          res = await api.get(`/api/arquivos/${id}/`, { params, headers });
+        }
+
         if (ativo && res?.data) {
           setArquivoAtual(res.data);
+          setErro('');
         }
       } catch (err) {
         console.error('Erro ao buscar dados do arquivo:', err);
         if (ativo) {
-          setErro((prev) => prev || 'Não foi possível carregar os dados deste arquivo.');
+          setErro(err.response?.data?.erro || 'Não foi possível carregar os dados deste arquivo.');
         }
       } finally {
         if (ativo) {
@@ -68,7 +87,7 @@ export default function ClientFilePage({ onAtualizarDados }) {
     return () => {
       ativo = false;
     };
-  }, [id]);
+  }, [id, cliente?.id]);
 
   // Garante URL absoluta completa com baseURL do backend para prevenir broken images
   const resolverUrlAbsoluta = (caminho) => {
@@ -169,14 +188,16 @@ export default function ClientFilePage({ onAtualizarDados }) {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-10 font-sans text-slate-800">
-      {/* HEADER DA PÁGINA COM BOTÃO VOLTAR PROEMINENTE */}
+      {/* HEADER DA PÁGINA (DUAS LINHAS: NAVEGAÇÃO E INFORMAÇÕES) */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-xs">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex flex-col">
+          
+          {/* Linha 1 (Navegação): Voltar à esquerda, Download minimalista sem texto à direita */}
+          <div className="flex justify-between items-center w-full mb-4">
             <button
               type="button"
               onClick={handleVoltar}
-              className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer active:scale-95 shrink-0"
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer active:scale-95"
               title="Voltar à lista de pastas e arquivos"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -186,37 +207,62 @@ export default function ClientFilePage({ onAtualizarDados }) {
               <span>Voltar</span>
             </button>
 
+            {url && (
+              <a
+                href={url}
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full transition-colors cursor-pointer flex items-center justify-center shadow-2xs active:scale-95"
+                title="Baixar Arquivo"
+                aria-label="Baixar Arquivo"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              </a>
+            )}
+          </div>
+
+          {/* Linha 2 (Informações): Ícone do tipo, Título grande e metadados alinhados à esquerda */}
+          <div className="flex items-center gap-3.5 w-full min-w-0">
+            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl shrink-0 flex items-center justify-center">
+              {isPdf ? (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+              ) : isImagem ? (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+              ) : (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+              )}
+            </div>
+
             <div className="min-w-0 flex-1">
-              <h1 className="text-base sm:text-lg font-bold text-slate-900 truncate m-0" title={nomeExibicao}>
+              <h1 className="text-lg sm:text-xl font-bold text-slate-900 truncate m-0" title={nomeExibicao}>
                 {nomeExibicao || 'Carregando documento...'}
               </h1>
               <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-slate-500 mt-0.5">
-                <span>Formato: .{ext.toUpperCase() || 'ARQUIVO'}</span>
+                <span className="font-semibold text-slate-600">Formato: .{ext.toUpperCase() || 'ARQUIVO'}</span>
                 <span>•</span>
                 <span>Visualizador de Projeto do Cliente</span>
               </div>
             </div>
           </div>
 
-          {url && (
-            <div className="flex items-center justify-end gap-3 shrink-0 self-end md:self-auto">
-              <a
-                href={url}
-                download
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-2"
-                title="Baixar cópia original"
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                Baixar Arquivo
-              </a>
-            </div>
-          )}
         </div>
       </header>
 
