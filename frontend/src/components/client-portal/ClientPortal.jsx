@@ -16,24 +16,143 @@ export default function ClientPortal({
 }) {
   const [clienteLogado, setClienteLogado] = useState(() => {
     try {
-      const role = localStorage.getItem('userRole') || sessionStorage.getItem('userRole');
-      if (role !== 'cliente') return null;
       const salvo = localStorage.getItem('cliente_info') || sessionStorage.getItem('cliente_info');
       return salvo ? JSON.parse(salvo) : null;
     } catch {
       return null;
     }
   });
+  const [clienteId, setClienteId] = useState(() => {
+    return localStorage.getItem('cliente_id') || sessionStorage.getItem('cliente_id') || null;
+  });
   const [telefone, setTelefone] = useState('');
   const [codigo, setCodigo] = useState('');
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
+  const [carregandoObras, setCarregandoObras] = useState(false);
 
   const [projetoAberto, setProjetoAberto] = useState(null);
   const [arquivoModal, setArquivoModal] = useState(null);
-  const [projetosLocais, setProjetosLocais] = useState(projetos || []);
-  const [pastasLocais, setPastasLocais] = useState(pastas || []);
-  const [arquivosLocais, setArquivosLocais] = useState(arquivos || []);
+  const [projetosLocais, setProjetosLocais] = useState(() => {
+    if (projetos && projetos.length > 0) return projetos;
+    try {
+      const salvo = localStorage.getItem('cliente_projetos');
+      return salvo ? JSON.parse(salvo) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [pastasLocais, setPastasLocais] = useState(() => {
+    if (pastas && pastas.length > 0) return pastas;
+    try {
+      const salvo = localStorage.getItem('cliente_pastas');
+      return salvo ? JSON.parse(salvo) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [arquivosLocais, setArquivosLocais] = useState(() => {
+    if (arquivos && arquivos.length > 0) return arquivos;
+    try {
+      const salvo = localStorage.getItem('cliente_arquivos');
+      return salvo ? JSON.parse(salvo) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // --- FUNÇÃO PARA BUSCAR AS OBRAS, PASTAS E ARQUIVOS DO CLIENTE ---
+  const carregarObrasCliente = async (idParam) => {
+    const idParaBuscar =
+      idParam ||
+      clienteId ||
+      clienteLogado?.id ||
+      localStorage.getItem('cliente_id') ||
+      sessionStorage.getItem('cliente_id');
+
+    if (!idParaBuscar) return;
+
+    try {
+      setCarregandoObras(true);
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (token) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      }
+
+      const headers = {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        'X-Cliente-ID': String(idParaBuscar),
+      };
+      const params = { cliente_id: String(idParaBuscar) };
+
+      const [resProjetos, resPastas, resArquivos] = await Promise.all([
+        api.get('projetos/', { params, headers }),
+        api.get('pastas/', { params, headers }),
+        api.get('arquivos/', { params, headers }),
+      ]);
+
+      if (resProjetos?.data) {
+        setProjetosLocais(resProjetos.data);
+        localStorage.setItem('cliente_projetos', JSON.stringify(resProjetos.data));
+        if (resProjetos.data.length === 1 && !projetoAberto) {
+          setProjetoAberto(resProjetos.data[0]);
+        } else if (projetoAberto) {
+          const atualizado = resProjetos.data.find((p) => p.id === projetoAberto.id);
+          if (atualizado) setProjetoAberto(atualizado);
+        }
+      }
+      if (resPastas?.data) {
+        setPastasLocais(resPastas.data);
+        localStorage.setItem('cliente_pastas', JSON.stringify(resPastas.data));
+      }
+      if (resArquivos?.data) {
+        setArquivosLocais(resArquivos.data);
+        localStorage.setItem('cliente_arquivos', JSON.stringify(resArquivos.data));
+      }
+    } catch (err) {
+      console.error('Erro ao buscar obras e pastas do cliente:', err);
+    } finally {
+      setCarregandoObras(false);
+    }
+  };
+
+  // --- EFEITO DE INICIALIZAÇÃO NO MOUNT (F5) COM RECUPERAÇÃO DO LOCALSTORAGE ---
+  useEffect(() => {
+    let info = clienteLogado;
+    let id = clienteId;
+
+    // 1. Verifica se o estado que guarda as informações do cliente está vazio ou indefinido
+    if (!info || !id) {
+      const infoStorage = localStorage.getItem('cliente_info') || sessionStorage.getItem('cliente_info');
+      const idStorage = localStorage.getItem('cliente_id') || sessionStorage.getItem('cliente_id');
+
+      if (infoStorage) {
+        try {
+          info = JSON.parse(infoStorage);
+          setClienteLogado(info);
+        } catch (e) {
+          console.error('Erro ao recuperar cliente_info do storage:', e);
+        }
+      }
+
+      if (idStorage) {
+        id = idStorage;
+        setClienteId(idStorage);
+      } else if (info?.id) {
+        id = String(info.id);
+        setClienteId(id);
+      }
+    }
+
+    // 2. Garante que a requisição GET utilize esse ID recuperado para repovoar a tela
+    const idFinal = id || info?.id || localStorage.getItem('cliente_id') || sessionStorage.getItem('cliente_id');
+    if (idFinal) {
+      carregarObrasCliente(idFinal);
+    }
+    if (onAtualizarDados) {
+      onAtualizarDados();
+    }
+  }, []);
 
   useEffect(() => {
     if (arquivos && arquivos.length > 0) setArquivosLocais(arquivos);
@@ -47,16 +166,16 @@ export default function ClientPortal({
     if (pastas && pastas.length > 0) setPastasLocais(pastas);
   }, [pastas]);
 
-  useEffect(() => {
-    if (clienteLogado && onAtualizarDados) {
-      onAtualizarDados();
-    }
-  }, [clienteLogado?.id]);
-
   const handleArquivoAtualizado = (arqAtualizado) => {
-    setArquivosLocais((prev) =>
-      prev.map((a) => (a.id === arqAtualizado.id ? arqAtualizado : a))
-    );
+    setArquivosLocais((prev) => {
+      const novos = prev.map((a) => (a.id === arqAtualizado.id ? arqAtualizado : a));
+      try {
+        localStorage.setItem('cliente_arquivos', JSON.stringify(novos));
+      } catch (e) {
+        console.error(e);
+      }
+      return novos;
+    });
     setArquivoModal(arqAtualizado);
     if (onAtualizarDados) onAtualizarDados();
   };
@@ -120,21 +239,30 @@ export default function ClientPortal({
           sessionStorage.setItem('refresh', data.refresh);
         }
         if (clienteInfo?.id) {
-          localStorage.setItem('cliente_id', String(clienteInfo.id));
-          sessionStorage.setItem('cliente_id', String(clienteInfo.id));
+          const cId = String(clienteInfo.id);
+          setClienteId(cId);
+          localStorage.setItem('cliente_id', cId);
+          sessionStorage.setItem('cliente_id', cId);
         }
         localStorage.setItem('cliente_info', JSON.stringify(clienteInfo));
         sessionStorage.setItem('cliente_info', JSON.stringify(clienteInfo));
 
-        // 3. Atualiza dados locais recebidos da API
+        // 3. Atualiza dados locais recebidos da API e salva cache no storage
         if (data.projetos) {
           setProjetosLocais(data.projetos);
+          localStorage.setItem('cliente_projetos', JSON.stringify(data.projetos));
           if (data.projetos.length === 1) {
             setProjetoAberto(data.projetos[0]);
           }
         }
-        if (data.pastas) setPastasLocais(data.pastas);
-        if (data.arquivos) setArquivosLocais(data.arquivos);
+        if (data.pastas) {
+          setPastasLocais(data.pastas);
+          localStorage.setItem('cliente_pastas', JSON.stringify(data.pastas));
+        }
+        if (data.arquivos) {
+          setArquivosLocais(data.arquivos);
+          localStorage.setItem('cliente_arquivos', JSON.stringify(data.arquivos));
+        }
 
         // 4. Atualização síncrona do estado do cliente e notificação ao componente pai
         setClienteLogado(clienteInfo);
@@ -168,15 +296,18 @@ export default function ClientPortal({
         });
 
         if (clienteEncontrado) {
+          const cId = String(clienteEncontrado.id);
           localStorage.setItem('userRole', 'cliente');
           sessionStorage.setItem('userRole', 'cliente');
-          localStorage.setItem('cliente_id', String(clienteEncontrado.id));
-          sessionStorage.setItem('cliente_id', String(clienteEncontrado.id));
+          localStorage.setItem('cliente_id', cId);
+          sessionStorage.setItem('cliente_id', cId);
           localStorage.setItem('cliente_info', JSON.stringify(clienteEncontrado));
           sessionStorage.setItem('cliente_info', JSON.stringify(clienteEncontrado));
+          setClienteId(cId);
           setClienteLogado(clienteEncontrado);
           setErro('');
           if (onLoginSucesso) onLoginSucesso(clienteEncontrado);
+          carregarObrasCliente(cId);
           return;
         }
       }
@@ -195,6 +326,9 @@ export default function ClientPortal({
     sessionStorage.removeItem('cliente_id');
     localStorage.removeItem('cliente_info');
     sessionStorage.removeItem('cliente_info');
+    localStorage.removeItem('cliente_projetos');
+    localStorage.removeItem('cliente_pastas');
+    localStorage.removeItem('cliente_arquivos');
     localStorage.removeItem('token');
     sessionStorage.removeItem('token');
     localStorage.removeItem('access');
@@ -202,6 +336,10 @@ export default function ClientPortal({
     localStorage.removeItem('refresh');
     sessionStorage.removeItem('refresh');
     setClienteLogado(null);
+    setClienteId(null);
+    setProjetosLocais([]);
+    setPastasLocais([]);
+    setArquivosLocais([]);
     if (onVoltar) onVoltar();
   };
 
@@ -213,6 +351,9 @@ export default function ClientPortal({
     sessionStorage.removeItem('cliente_id');
     localStorage.removeItem('cliente_info');
     sessionStorage.removeItem('cliente_info');
+    localStorage.removeItem('cliente_projetos');
+    localStorage.removeItem('cliente_pastas');
+    localStorage.removeItem('cliente_arquivos');
     localStorage.removeItem('token');
     sessionStorage.removeItem('token');
     localStorage.removeItem('access');
@@ -220,6 +361,10 @@ export default function ClientPortal({
     localStorage.removeItem('refresh');
     sessionStorage.removeItem('refresh');
     setClienteLogado(null);
+    setClienteId(null);
+    setProjetosLocais([]);
+    setPastasLocais([]);
+    setArquivosLocais([]);
     setProjetoAberto(null);
     if (onLogout) onLogout();
   };
@@ -312,11 +457,12 @@ export default function ClientPortal({
   const listaPastas = pastasLocais.length > 0 ? pastasLocais : (pastas || []);
   const listaArquivos = arquivosLocais.length > 0 ? arquivosLocais : (arquivos || []);
 
+  const idAtual = clienteId || clienteLogado?.id || localStorage.getItem('cliente_id') || sessionStorage.getItem('cliente_id');
   const meusProjetos = listaProjetos.filter((p) => {
-    if (!clienteLogado?.id) return false;
+    if (!idAtual) return true;
     const pClienteId = typeof p.cliente === 'object' ? p.cliente?.id : p.cliente;
     if (pClienteId !== undefined && pClienteId !== null) {
-      return String(pClienteId) === String(clienteLogado.id);
+      return String(pClienteId) === String(idAtual);
     }
     return true;
   });
@@ -516,7 +662,13 @@ export default function ClientPortal({
               </div>
             </div>
           ))}
-          {meusProjetos.length === 0 && (
+          {carregandoObras && meusProjetos.length === 0 ? (
+            <div className="col-span-full py-12 px-6 flex flex-col items-center justify-center text-center bg-white border border-slate-200 rounded-3xl">
+              <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+              <p className="text-sm font-semibold text-slate-800 mb-1">Carregando suas obras...</p>
+              <p className="text-xs text-slate-400">Buscando os projetos atualizados do seu painel.</p>
+            </div>
+          ) : meusProjetos.length === 0 ? (
             <div className="col-span-full py-12 px-6 flex flex-col items-center justify-center text-center bg-white border border-dashed border-slate-300 rounded-3xl">
               <div className="p-4 bg-slate-50 rounded-full mb-3">
                 <svg className="w-8 h-8 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -527,7 +679,7 @@ export default function ClientPortal({
               <p className="text-sm font-medium text-slate-900 mb-1">Nenhuma obra encontrada</p>
               <p className="text-xs text-slate-500">Você não possui projetos ativos vinculados ao seu número.</p>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

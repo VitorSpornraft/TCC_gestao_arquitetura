@@ -10,13 +10,18 @@ export default function useWorkspaceData() {
 
   const carregarDados = useCallback(async () => {
     try {
+      const clienteId = localStorage.getItem("cliente_id") || sessionStorage.getItem("cliente_id");
+      const userRole = localStorage.getItem("userRole") || sessionStorage.getItem("userRole");
+
+      const params = (userRole === "cliente" && clienteId) ? { cliente_id: clienteId } : {};
+
       const [resClientes, resProjetos, resTarefas, resPastas, resArquivos] =
         await Promise.all([
-          api.get("clientes/"),
-          api.get("projetos/"),
-          api.get("tarefas/"),
-          api.get("pastas/"),
-          api.get("arquivos/"),
+          api.get("clientes/", { params }),
+          api.get("projetos/", { params }),
+          api.get("tarefas/", { params }),
+          api.get("pastas/", { params }),
+          api.get("arquivos/", { params }),
         ]);
       setClientes(resClientes.data);
       setProjetos(resProjetos.data);
