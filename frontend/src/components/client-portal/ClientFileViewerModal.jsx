@@ -122,24 +122,24 @@ export default function ClientFileViewerModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-4xl max-h-[90dvh] flex flex-col bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 h-[100dvh] w-screen z-50 flex flex-col items-center justify-center p-4 md:p-6 bg-slate-900/80 backdrop-blur-sm">
+      <div className="relative w-full max-w-4xl max-h-[90dvh] flex flex-col bg-white rounded-2xl overflow-hidden shadow-2xl">
         
         {/* CABEÇALHO (HEADER) - Sanduíche Topo */}
-        <div className="shrink-0 bg-white dark:bg-slate-900 z-10 border-b border-slate-200 dark:border-slate-700 p-5 md:p-6">
+        <div className="shrink-0 bg-white z-10 border-b border-slate-200 p-5 md:p-6">
           <div className="flex flex-col md:flex-row justify-between items-start gap-4">
             <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
-              <div className="p-2.5 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-xl shrink-0">
+              <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl shrink-0">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-slate-900 dark:text-white truncate m-0" title={nomeExibicao}>
+                <h3 className="text-base font-bold text-slate-900 truncate m-0" title={nomeExibicao}>
                   {nomeExibicao}
                 </h3>
-                <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500 mt-0.5">
                   <span>Formato: .{ext.toUpperCase() || 'ARQUIVO'}</span>
                   <span>•</span>
                   <span>Visualizador de Projeto do Cliente</span>
@@ -153,7 +153,7 @@ export default function ClientFileViewerModal({
                 download
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-2"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-2"
                 title="Baixar cópia original"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -166,7 +166,7 @@ export default function ClientFileViewerModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-xl text-lg font-bold transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-800 hover:bg-slate-100 p-2 rounded-xl text-lg font-bold transition-colors cursor-pointer"
                 title="Fechar"
               >
                 ✕
@@ -179,7 +179,7 @@ export default function ClientFileViewerModal({
         <div className="flex-1 overflow-y-auto p-5 md:p-6 relative z-0 flex flex-col gap-6">
           
           {/* CONTAINER DEDICADO DA IMAGEM / ARQUIVO */}
-          <div className="relative w-full h-[35vh] md:h-[50vh] bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+          <div className="relative w-full h-[35vh] md:h-[50vh] bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
             {isImagem ? (
               <img
                 src={url}
@@ -188,7 +188,7 @@ export default function ClientFileViewerModal({
               />
             ) : (
               <div className="flex flex-col items-center justify-center text-center p-6 sm:p-8 max-w-md mx-auto">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 mb-3 bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center shadow-xs border border-slate-200 dark:border-slate-600">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 mb-3 bg-white text-indigo-600 rounded-2xl flex items-center justify-center shadow-xs border border-slate-200">
                   <svg
                     className="w-8 h-8 sm:w-10 sm:h-10"
                     viewBox="0 0 24 24"
@@ -205,10 +205,10 @@ export default function ClientFileViewerModal({
                     <polyline points="10 9 9 9 8 9" />
                   </svg>
                 </div>
-                <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 mb-1 max-w-xs truncate" title={nomeExibicao}>
+                <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1 max-w-xs truncate" title={nomeExibicao}>
                   {nomeExibicao}
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 max-w-xs">
+                <p className="text-xs text-slate-500 mb-4 max-w-xs">
                   {isPdf ? 'Documento PDF pronto para análise.' : 'Documento pronto para análise.'}
                 </p>
                 <button
@@ -228,15 +228,15 @@ export default function ClientFileViewerModal({
           </div>
 
           {/* STATUS DE VALIDAÇÃO E ALERTAS */}
-          <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-5">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider block mb-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                   Status de Validação
                 </span>
                 <div className="flex items-center gap-3">
                   <ApprovalStatusBadge status={arquivoAtual.status_aprovacao} size="lg" />
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  <span className="text-xs text-slate-500 font-medium">
                     {feedbacks.length} feedback{feedbacks.length === 1 ? '' : 's'}
                   </span>
                 </div>
@@ -244,14 +244,14 @@ export default function ClientFileViewerModal({
             </div>
 
             {sucesso && (
-              <div className="mt-3 p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 rounded-xl text-xs font-semibold animate-fadeIn flex items-center gap-2">
+              <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold animate-fadeIn flex items-center gap-2">
                 <svg className="w-4 h-4 text-emerald-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                 {sucesso}
               </div>
             )}
 
             {erro && (
-              <div className="mt-3 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 rounded-xl text-xs font-semibold animate-fadeIn flex items-center gap-2">
+              <div className="mt-3 p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-semibold animate-fadeIn flex items-center gap-2">
                 <svg className="w-4 h-4 text-rose-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 {erro}
               </div>
@@ -259,17 +259,17 @@ export default function ClientFileViewerModal({
           </div>
 
           {/* HISTÓRICO DE FEEDBACKS */}
-          <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-5">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-3">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-3">
               Histórico de Feedbacks
             </span>
 
             {feedbacks.length === 0 ? (
-              <div className="py-8 text-center text-slate-400 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-4">
-                <svg className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div className="py-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl p-4">
+                <svg className="w-8 h-8 mx-auto mb-2 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
-                <p className="text-xs font-medium text-slate-600 dark:text-slate-300 mb-0.5">Sem comentários registrados</p>
+                <p className="text-xs font-medium text-slate-600 mb-0.5">Sem comentários registrados</p>
                 <p className="text-[11px] text-slate-400">Esta versão do arquivo ainda não possui observações.</p>
               </div>
             ) : (
@@ -281,18 +281,18 @@ export default function ClientFileViewerModal({
                       key={f.id || idx}
                       className={`p-3.5 rounded-xl border transition-all ${
                         isClient
-                          ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-2xs'
-                          : 'bg-indigo-50/60 dark:bg-indigo-950/40 border-indigo-100 dark:border-indigo-800 text-indigo-950 dark:text-indigo-200 shadow-2xs'
+                          ? 'bg-white border-slate-200 shadow-2xs'
+                          : 'bg-indigo-50/60 border-indigo-100 text-indigo-950 shadow-2xs'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2 mb-1.5">
                         <div className="flex items-center gap-1.5">
                           <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                            isClient ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200' : 'bg-indigo-600 text-white'
+                            isClient ? 'bg-slate-200 text-slate-700' : 'bg-indigo-600 text-white'
                           }`}>
                             {f.autor_nome?.charAt(0)?.toUpperCase() || 'U'}
                           </div>
-                          <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                          <span className="text-xs font-bold text-slate-800">
                             {f.autor_nome} {isClient && '(Você)'}
                           </span>
                         </div>
@@ -300,7 +300,7 @@ export default function ClientFileViewerModal({
                           {f.criado_em ? new Date(f.criado_em).toLocaleDateString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap m-0">
+                      <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap m-0">
                         {f.comentario}
                       </p>
                     </div>
@@ -312,9 +312,9 @@ export default function ClientFileViewerModal({
 
           {/* FORMULÁRIO DE COMENTÁRIO ADICIONAL (Quando já Aprovado ou Rejeitado) */}
           {(arquivoAtual.status_aprovacao === 'APROVADO' || arquivoAtual.status_aprovacao === 'REJEITADO') && (
-            <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-5">
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5">
               <form onSubmit={handleEnviarComentario} className="space-y-2.5">
-                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">
+                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide">
                   Adicionar Novo Comentário
                 </label>
                 <textarea
@@ -322,7 +322,7 @@ export default function ClientFileViewerModal({
                   value={novoComentario}
                   onChange={(e) => setNovoComentario(e.target.value)}
                   placeholder="Deixe uma observação adicional para o arquiteto..."
-                  className="w-full p-2.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 dark:text-white placeholder:text-slate-400 resize-none font-medium"
+                  className="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 placeholder:text-slate-400 resize-none font-medium"
                 />
                 <button
                   type="submit"
@@ -338,7 +338,7 @@ export default function ClientFileViewerModal({
         </div>
 
         {/* RODAPÉ (FOOTER) - Sanduíche Base: Fundo sólido e z-index alto, grudado no fundo */}
-        <div className="shrink-0 bg-white dark:bg-slate-900 z-10 border-t border-slate-200 dark:border-slate-700 p-5 md:p-6">
+        <div className="shrink-0 bg-white z-10 border-t border-slate-200 p-5 md:p-6">
           {arquivoAtual.status_aprovacao === 'PENDENTE' ? (
             !modoRejeicao ? (
               <div className="flex flex-col sm:flex-row gap-3 w-full">
@@ -358,7 +358,7 @@ export default function ClientFileViewerModal({
                   type="button"
                   onClick={() => { setModoRejeicao(true); setErro(''); }}
                   disabled={enviando}
-                  className="flex-1 py-3 px-4 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/40 disabled:opacity-50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-[0.98]"
+                  className="flex-1 py-3 px-4 bg-rose-50 hover:bg-rose-100 disabled:opacity-50 text-rose-700 border border-rose-200 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-[0.98]"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -370,13 +370,13 @@ export default function ClientFileViewerModal({
             ) : (
               <form onSubmit={handleRejeitar} className="w-full space-y-3 animate-fadeIn">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-rose-700 dark:text-rose-400">
+                  <label className="block text-xs font-bold text-rose-700">
                     Motivo das Alterações (Obrigatório)
                   </label>
                   <button
                     type="button"
                     onClick={() => setModoRejeicao(false)}
-                    className="text-[11px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-semibold cursor-pointer"
+                    className="text-[11px] text-slate-400 hover:text-slate-700 font-semibold cursor-pointer"
                   >
                     Cancelar
                   </button>
@@ -388,13 +388,13 @@ export default function ClientFileViewerModal({
                   value={motivoRejeicao}
                   onChange={(e) => setMotivoRejeicao(e.target.value)}
                   placeholder="Ex: Gostaria de alterar a porta da suíte para o lado direito e aumentar o vão da janela..."
-                  className="w-full p-3 text-xs bg-rose-50/30 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 text-slate-900 dark:text-white placeholder:text-slate-400 resize-none font-medium"
+                  className="w-full p-3 text-xs bg-rose-50/30 border border-rose-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 text-slate-900 placeholder:text-slate-400 resize-none font-medium"
                 />
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => setModoRejeicao(false)}
-                    className="flex-1 py-2.5 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                    className="flex-1 py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
                   >
                     Voltar
                   </button>
@@ -412,13 +412,13 @@ export default function ClientFileViewerModal({
             <div className="w-full flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 {arquivoAtual.status_aprovacao === 'APROVADO' ? (
-                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-                    <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950/50 flex items-center justify-center">✓</span>
+                  <span className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">✓</span>
                     Planta Aprovada por você!
                   </span>
                 ) : (
-                  <span className="text-xs font-bold text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
-                    <span className="w-5 h-5 rounded-full bg-rose-100 dark:bg-rose-950/50 flex items-center justify-center">✕</span>
+                  <span className="text-xs font-bold text-rose-700 flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-rose-100 flex items-center justify-center">✕</span>
                     Revisão Rejeitada. Aguarde o envio de nova versão.
                   </span>
                 )}
@@ -426,7 +426,7 @@ export default function ClientFileViewerModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
               >
                 Fechar
               </button>
