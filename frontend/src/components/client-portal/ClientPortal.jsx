@@ -43,24 +43,30 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
     setArquivoModal(arq);
   };
 
-  // --- LÓGICA DE LOGIN DO CLIENTE (Com autenticação na API e fallback seguro) ---
+  // --- LÓGICA DE LOGIN DO CLIENTE (Com validação estrita de Telefone e Código de Acesso) ---
   const handleLogin = async (e) => {
     e.preventDefault();
     setErro('');
-    setCarregando(true);
 
-    const codigoLimpo = (codigo || '').trim().toUpperCase();
     const telLimpo = (telefone || '').trim();
+    const codigoLimpo = (codigo || '').trim().toUpperCase();
 
-    if (!codigoLimpo && !telLimpo) {
-      setErro('Por favor, informe seu código de acesso (PIN).');
-      setCarregando(false);
+    // Validação estrita: ambos os campos são obrigatórios
+    if (!telLimpo || !codigoLimpo) {
+      setErro('Código de acesso ou telefone inválidos.');
       return;
     }
 
+    setCarregando(true);
+
     try {
-      // 1. Aciona endpoint do backend (/api/auth/cliente-login/)
-      const data = await loginCliente({ telefone: telLimpo, codigo: codigoLimpo });
+      // 1. Envia requisição com Telefone e codigo_acesso (e codigo) no payload
+      const data = await loginCliente({
+        telefone: telLimpo,
+        codigo_acesso: codigoLimpo,
+        codigo: codigoLimpo,
+      });
+
       if (data && (data.cliente || data.user)) {
         const clienteInfo = data.cliente || {
           id: data.user.cliente_id || data.user.id,
@@ -68,7 +74,7 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
           ...data.user,
         };
 
-        // Salva tokens JWT no storage (tanto local quanto session para compatibilidade total)
+        // 2. Gestão de Sessão: salva access e refresh token no storage
         if (data.access) {
           localStorage.setItem('token', data.access);
           sessionStorage.setItem('token', data.access);
@@ -84,40 +90,48 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
           sessionStorage.setItem('cliente_id', String(clienteInfo.id));
         }
 
+        // 3. Fecha a tela de login e libera a renderização do ClientExplorer / Obras
         setClienteLogado(clienteInfo);
-        if (data.projetos) setProjetosLocais(data.projetos);
+        if (data.projetos) {
+          setProjetosLocais(data.projetos);
+          if (data.projetos.length === 1) {
+            setProjetoAberto(data.projetos[0]);
+          }
+        }
         if (data.pastas) setPastasLocais(data.pastas);
         if (data.arquivos) setArquivosLocais(data.arquivos);
         return;
       }
+      setErro('Código de acesso ou telefone inválidos.');
     } catch (apiError) {
-      // 2. Se a API estiver offline ou dados já estiverem pré-carregados nas props, tenta validação local
+      // Se der erro (ex: 401 Unauthorized), exibe 'Código de acesso ou telefone inválidos.'
       const telDigitado = telLimpo.replace(/\D/g, '');
 
-      const clienteEncontrado = (clientes || []).find((c) => {
-        const codigoBate = (c.codigo_acesso || '').trim().toUpperCase() === codigoLimpo;
-        if (!codigoBate) return false;
+      // Fallback estrito offline apenas se não houver resposta do servidor
+      if (!apiError.response && clientes && clientes.length > 0) {
+        const clienteEncontrado = clientes.find((c) => {
+          const codigoBate = (c.codigo_acesso || '').trim().toUpperCase() === codigoLimpo;
+          if (!codigoBate) return false;
 
-        if (telDigitado) {
           const telBanco = (c.telefone || '').replace(/\D/g, '');
           const dddBanco = (c.ddd || '').replace(/\D/g, '');
           const digitouComDDD = telDigitado === `${dddBanco}${telBanco}`;
           const digitouSoNumero = telDigitado === telBanco;
-          return digitouComDDD || digitouSoNumero;
+          const sufixoBate = telDigitado.length >= 8 && `${dddBanco}${telBanco}`.endsWith(telDigitado);
+
+          return digitouComDDD || digitouSoNumero || sufixoBate;
+        });
+
+        if (clienteEncontrado) {
+          localStorage.setItem('cliente_id', String(clienteEncontrado.id));
+          sessionStorage.setItem('cliente_id', String(clienteEncontrado.id));
+          setClienteLogado(clienteEncontrado);
+          setErro('');
+          return;
         }
-
-        return true;
-      });
-
-      if (clienteEncontrado) {
-        localStorage.setItem('cliente_id', String(clienteEncontrado.id));
-        sessionStorage.setItem('cliente_id', String(clienteEncontrado.id));
-        setClienteLogado(clienteEncontrado);
-        setErro('');
-      } else {
-        const msgApi = apiError.response?.data?.erro;
-        setErro(msgApi || 'Código de acesso ou telefone inválidos.');
       }
+
+      setErro('Código de acesso ou telefone inválidos.');
     } finally {
       setCarregando(false);
     }
@@ -158,6 +172,18 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
         <div className="w-full max-w-md mt-8 bg-white py-8 px-6 shadow-xl shadow-slate-200/50 rounded-3xl border border-slate-100">
           <form className="space-y-6" onSubmit={handleLogin}>
             <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Telefone</label>
+              <input
+                type="text"
+                required
+                value={telefone}
+                onChange={(e) => setTelefone(e.target.value)}
+                className="block w-full rounded-xl border border-slate-300 px-4 py-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-900 font-medium"
+                placeholder="Número do telefone com DDD"
+                autoFocus
+              />
+            </div>
+            <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">Código de Acesso (PIN)</label>
               <input
                 type="text"
@@ -166,17 +192,6 @@ export default function ClientPortal({ clientes, projetos, pastas, arquivos, onV
                 onChange={(e) => setCodigo(e.target.value.toUpperCase())}
                 className="block w-full rounded-xl border border-slate-300 px-4 py-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-900 font-bold uppercase tracking-wider text-center text-lg"
                 placeholder="Ex: CLI1020"
-                autoFocus
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Telefone (Opcional)</label>
-              <input
-                type="text"
-                value={telefone}
-                onChange={(e) => setTelefone(e.target.value)}
-                className="block w-full rounded-xl border border-slate-300 px-4 py-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-900 font-medium"
-                placeholder="Telefone do cadastro (opcional)"
               />
             </div>
 

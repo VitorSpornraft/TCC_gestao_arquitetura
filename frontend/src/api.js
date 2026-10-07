@@ -57,8 +57,13 @@ export const atualizarVisibilidadePasta = async (pastaId, visivelCliente) => {
 };
 
 // --- AUTENTICAÇÃO DO CLIENTE (PORTAL) ---
-export const loginCliente = async ({ telefone, codigo }) => {
-    const response = await api.post('auth/cliente-login/', { telefone, codigo });
+export const loginCliente = async ({ telefone, codigo, codigo_acesso }) => {
+    const pin = (codigo_acesso || codigo || '').trim().toUpperCase();
+    const response = await api.post('auth/cliente-login/', {
+        telefone: (telefone || '').trim(),
+        codigo: pin,
+        codigo_acesso: pin,
+    });
     return response.data;
 };
 
