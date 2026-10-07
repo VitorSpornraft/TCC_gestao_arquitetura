@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { getFileUrl, formatarNomeArquivo, isArquivoPdf, isArquivoImagem } from '../client-explorer/fileUtils';
+import { useNavigate } from 'react-router-dom';
+import { getFileUrl, formatarNomeArquivo } from '../client-explorer/fileUtils';
 import ApprovalStatusBadge from '../common/ApprovalStatusBadge';
-import ClientFileViewerModal from './ClientFileViewerModal';
 import api, { loginCliente } from '../../api';
 
 export default function ClientPortal({
@@ -31,8 +31,8 @@ export default function ClientPortal({
   const [carregando, setCarregando] = useState(false);
   const [carregandoObras, setCarregandoObras] = useState(false);
 
+  const navigate = useNavigate();
   const [projetoAberto, setProjetoAberto] = useState(null);
-  const [arquivoModal, setArquivoModal] = useState(null);
   const [projetosLocais, setProjetosLocais] = useState(() => {
     if (projetos && projetos.length > 0) return projetos;
     try {
@@ -166,24 +166,11 @@ export default function ClientPortal({
     if (pastas && pastas.length > 0) setPastasLocais(pastas);
   }, [pastas]);
 
-  const handleArquivoAtualizado = (arqAtualizado) => {
-    setArquivosLocais((prev) => {
-      const novos = prev.map((a) => (a.id === arqAtualizado.id ? arqAtualizado : a));
-      try {
-        localStorage.setItem('cliente_arquivos', JSON.stringify(novos));
-      } catch (e) {
-        console.error(e);
-      }
-      return novos;
-    });
-    setArquivoModal(arqAtualizado);
-    if (onAtualizarDados) onAtualizarDados();
-  };
 
-  // --- CONTROLE DE CLIQUE E PRÉ-VISUALIZAÇÃO DE ARQUIVOS ---
+  // --- NAVEGAÇÃO PARA A PÁGINA DO ARQUIVO DO CLIENTE ---
   const handleCliqueArquivo = (arq) => {
     if (!arq) return;
-    setArquivoModal(arq);
+    navigate(`/portal/arquivo/${arq.id}`, { state: { arquivo: arq } });
   };
 
   // --- LÓGICA DE LOGIN DO CLIENTE (Com validação estrita de Telefone e PIN, e injeção síncrona de token) ---
@@ -593,17 +580,6 @@ export default function ClientPortal({
             )}
           </div>
 
-          {/* Modal de Análise e Aprovação do Cliente */}
-          {arquivoModal && (
-            <ClientFileViewerModal
-              arquivo={arquivoModal}
-              cliente={clienteLogado}
-              onClose={() => setArquivoModal(null)}
-              onArquivoAtualizado={handleArquivoAtualizado}
-              getFileUrl={getFileUrl}
-              formatarNomeArquivo={formatarNomeArquivo}
-            />
-          )}
         </div>
       </div>
     );

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import ClientList from "./components/client-list/ClientList";
 import NewClientModal from "./components/client-list/NewClientModal";
 import ClientExplorer from "./components/client-explorer/ClientExplorer";
@@ -11,12 +12,14 @@ import Cadastro from "./components/auth/Cadastro";
 import Analytics from "./components/analytics/Analytics";
 import Calendar from "./components/calendar/Calendar";
 import ClientPortal from "./components/client-portal/ClientPortal";
+import ClientFilePage from "./components/client-portal/ClientFilePage";
 import useWorkspaceData from "./hooks/useWorkspaceData";
 import useProjectOperations from "./hooks/useProjectOperations";
 import useTaskOperations from "./hooks/useTaskOperations";
 import api from "./api";
 
 export default function App() {
+  const navigate = useNavigate();
   const [token, setToken] = useState(() => {
     return localStorage.getItem("token") || sessionStorage.getItem("token") || null;
   });
@@ -118,6 +121,7 @@ export default function App() {
     setUserRole(null);
     setModoCliente(false);
     setProjetoSelecionado(null);
+    navigate("/");
   };
 
   const abrirModalNovaObra = () => {
@@ -187,58 +191,7 @@ export default function App() {
     setTarefaModal,
   });
 
-  // --- PROTEÇÃO DE ROTAS: CLIENTE NUNCA ACESSA O PAINEL DO ARQUITETO ---
-  if (userRole === "cliente" || modoCliente) {
-    return (
-      <ClientPortal
-        clientes={clientes}
-        projetos={projetos}
-        pastas={pastas}
-        arquivos={arquivos}
-        onVoltar={() => {
-          setModoCliente(false);
-          setUserRole(null);
-        }}
-        onAtualizarDados={carregarDados}
-        onLoginSucesso={(clienteInfo) => {
-          const t = localStorage.getItem("token") || sessionStorage.getItem("token");
-          setToken(t);
-          setUserRole("cliente");
-          setModoCliente(true);
-          setIsLoggedIn(false);
-          carregarDados();
-        }}
-        onLogout={fazerLogout}
-      />
-    );
-  }
-
-  // --- FLUXO DE ENTRADA: CADASTRO OU LOGIN DO ARQUITETO ---
-  if (!isLoggedIn || userRole !== "arquiteto") {
-    if (mostrarCadastro) {
-      return <Cadastro onVoltarLogin={() => setMostrarCadastro(false)} />;
-    }
-
-    return (
-      <Login
-        onLoginSucesso={() => {
-          const t = localStorage.getItem("token") || sessionStorage.getItem("token");
-          setToken(t);
-          setUserRole("arquiteto");
-          setIsLoggedIn(true);
-          carregarDados();
-        }}
-        onAbrirCadastro={() => setMostrarCadastro(true)}
-        onAbrirCliente={() => {
-          carregarDados();
-          setModoCliente(true);
-        }}
-      />
-    );
-  }
-
-  // --- RENDERIZAÇÃO DO SISTEMA INTERNO (ARQUITETO LOGADO) ---
-  return (
+  const renderPainelArquiteto = () => (
     <div className="flex h-screen w-full bg-zinc-50 overflow-hidden font-sans">
       <Navbar
         telaAtual={abaAtiva}
@@ -364,5 +317,98 @@ export default function App() {
         />
       )}
     </div>
+  );
+
+  const temToken = Boolean(
+    token || localStorage.getItem("token") || sessionStorage.getItem("token")
+  );
+  const ehCliente =
+    userRole === "cliente" ||
+    modoCliente ||
+    localStorage.getItem("userRole") === "cliente";
+
+  return (
+    <Routes>
+      {/* ROTA PROTEGIDA: PÁGINA DO ARQUIVO DO CLIENTE */}
+      <Route
+        path="/portal/arquivo/:id"
+        element={
+          temToken ? (
+            <ClientFilePage onAtualizarDados={carregarDados} />
+          ) : (
+            <Navigate to="/portal" replace />
+          )
+        }
+      />
+
+      {/* ROTA DO PORTAL DO CLIENTE */}
+      <Route
+        path="/portal"
+        element={
+          <ClientPortal
+            clientes={clientes}
+            projetos={projetos}
+            pastas={pastas}
+            arquivos={arquivos}
+            onVoltar={() => {
+              setModoCliente(false);
+              setUserRole(null);
+              navigate("/");
+            }}
+            onAtualizarDados={carregarDados}
+            onLoginSucesso={(_clienteInfo) => {
+              const t =
+                localStorage.getItem("token") || sessionStorage.getItem("token");
+              setToken(t);
+              setUserRole("cliente");
+              setModoCliente(true);
+              setIsLoggedIn(false);
+              carregarDados();
+            }}
+            onLogout={fazerLogout}
+          />
+        }
+      />
+
+      {/* ROTA RAIZ */}
+      <Route
+        path="/"
+        element={
+          ehCliente ? (
+            <Navigate to="/portal" replace />
+          ) : !isLoggedIn || userRole !== "arquiteto" ? (
+            mostrarCadastro ? (
+              <Cadastro onVoltarLogin={() => setMostrarCadastro(false)} />
+            ) : (
+              <Login
+                onLoginSucesso={() => {
+                  const t =
+                    localStorage.getItem("token") ||
+                    sessionStorage.getItem("token");
+                  setToken(t);
+                  setUserRole("arquiteto");
+                  setIsLoggedIn(true);
+                  carregarDados();
+                }}
+                onAbrirCadastro={() => setMostrarCadastro(true)}
+                onAbrirCliente={() => {
+                  carregarDados();
+                  setModoCliente(true);
+                  navigate("/portal");
+                }}
+              />
+            )
+          ) : (
+            renderPainelArquiteto()
+          )
+        }
+      />
+
+      {/* FALLBACK PARA QUALQUER OUTRA ROTA */}
+      <Route
+        path="*"
+        element={<Navigate to={ehCliente ? "/portal" : "/"} replace />}
+      />
+    </Routes>
   );
 }
