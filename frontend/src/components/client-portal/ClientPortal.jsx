@@ -83,10 +83,7 @@ export default function ClientPortal({
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       }
 
-      const headers = {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        'X-Cliente-ID': String(idParaBuscar),
-      };
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const params = { cliente_id: String(idParaBuscar) };
 
       const [resProjetos, resPastas, resArquivos] = await Promise.all([
@@ -232,6 +229,7 @@ export default function ClientPortal({
         sessionStorage.setItem('cliente_info', JSON.stringify(clienteInfo));
 
         // 2. Atualiza o api.defaults.headers.common['Authorization'] IMEDIATAMENTE na mesma linha
+        delete api.defaults.headers.common['X-Cliente-ID'];
         if (token) api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
         // 3. LOGO EM SEGUIDA, antes de qualquer outra coisa, chame carregarObrasCliente(id_salvo) explicitamente
@@ -311,6 +309,7 @@ export default function ClientPortal({
 
   const handleVoltar = () => {
     delete api.defaults.headers.common['Authorization'];
+    delete api.defaults.headers.common['X-Cliente-ID'];
     localStorage.removeItem('userRole');
     sessionStorage.removeItem('userRole');
     localStorage.removeItem('cliente_id');
@@ -336,6 +335,7 @@ export default function ClientPortal({
 
   const handleLogout = () => {
     delete api.defaults.headers.common['Authorization'];
+    delete api.defaults.headers.common['X-Cliente-ID'];
     localStorage.removeItem('userRole');
     sessionStorage.removeItem('userRole');
     localStorage.removeItem('cliente_id');

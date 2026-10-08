@@ -66,6 +66,8 @@ def get_cliente_do_usuario(user, request=None):
     if request:
         req_params = getattr(request, 'query_params', None) or getattr(request, 'GET', {})
         cliente_id = req_params.get('cliente_id')
+        if not cliente_id and hasattr(request, 'data') and isinstance(request.data, dict):
+            cliente_id = request.data.get('cliente_id')
         if not cliente_id and hasattr(request, 'headers'):
             cliente_id = request.headers.get('X-Cliente-ID')
         elif not cliente_id and hasattr(request, 'META'):

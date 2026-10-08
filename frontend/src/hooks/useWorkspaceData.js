@@ -17,6 +17,8 @@ export default function useWorkspaceData() {
         sessionStorage.getItem("access") ||
         sessionStorage.getItem("token");
 
+      delete api.defaults.headers.common['X-Cliente-ID'];
+
       if (token) {
         api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       }

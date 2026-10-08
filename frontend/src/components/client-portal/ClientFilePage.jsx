@@ -47,6 +47,7 @@ export default function ClientFilePage({ onAtualizarDados }) {
           localStorage.getItem('access') ||
           localStorage.getItem('token') ||
           sessionStorage.getItem('token');
+        delete api.defaults.headers.common['X-Cliente-ID'];
         if (token) {
           api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         }
@@ -116,7 +117,8 @@ export default function ClientFilePage({ onAtualizarDados }) {
     try {
       setEnviando(true);
       setErro('');
-      const atualizado = await aprovarArquivo(arquivoAtual.id);
+      const cid = cliente?.id || localStorage.getItem('cliente_id') || sessionStorage.getItem('cliente_id');
+      const atualizado = await aprovarArquivo(arquivoAtual.id, { cliente_id: cid });
       setArquivoAtual(atualizado);
       setSucesso('Documento aprovado com sucesso!');
       if (onAtualizarDados) onAtualizarDados();
@@ -137,9 +139,11 @@ export default function ClientFilePage({ onAtualizarDados }) {
     try {
       setEnviando(true);
       setErro('');
+      const cid = cliente?.id || localStorage.getItem('cliente_id') || sessionStorage.getItem('cliente_id');
       const atualizado = await rejeitarArquivo(arquivoAtual.id, {
         comentario: motivoRejeicao.trim(),
         autor_nome: cliente?.nome || 'Cliente',
+        cliente_id: cid,
       });
       setArquivoAtual(atualizado);
       setModoRejeicao(false);
@@ -160,9 +164,11 @@ export default function ClientFilePage({ onAtualizarDados }) {
     try {
       setEnviando(true);
       setErro('');
+      const cid = cliente?.id || localStorage.getItem('cliente_id') || sessionStorage.getItem('cliente_id');
       const atualizado = await adicionarFeedbackArquivo(arquivoAtual.id, {
         comentario: novoComentario.trim(),
         autor_nome: cliente?.nome || 'Cliente',
+        cliente_id: cid,
       });
       setArquivoAtual(atualizado);
       setNovoComentario('');

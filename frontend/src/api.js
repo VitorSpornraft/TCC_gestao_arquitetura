@@ -19,7 +19,10 @@ if (tokenInicial) {
     api.defaults.headers.common['Authorization'] = `Bearer ${tokenInicial}`;
 }
 
-// Interceptor para injetar o token JWT do arquiteto ou identificador do cliente automaticamente
+// Remove qualquer header customizado X-Cliente-ID para prevenir falhas de preflight CORS
+delete api.defaults.headers.common['X-Cliente-ID'];
+
+// Interceptor para injetar o token JWT do arquiteto ou cliente automaticamente
 api.interceptors.request.use(
     (config) => {
         const token =
@@ -32,14 +35,6 @@ api.interceptors.request.use(
             config.headers['Authorization'] = `Bearer ${token}`;
             if (typeof config.headers.set === 'function') {
                 config.headers.set('Authorization', `Bearer ${token}`);
-            }
-        }
-        const clienteId = localStorage.getItem('cliente_id') || sessionStorage.getItem('cliente_id');
-        if (clienteId) {
-            config.headers = config.headers || {};
-            config.headers['X-Cliente-ID'] = clienteId;
-            if (typeof config.headers.set === 'function') {
-                config.headers.set('X-Cliente-ID', clienteId);
             }
         }
         return config;
@@ -81,19 +76,39 @@ export const loginCliente = async ({ telefone, codigo, codigo_acesso }) => {
     return response.data;
 };
 
-// --- AÇÕES DE APROVAÇÃO E FEEDBACK DE ARQUIVOS ---
-export const aprovarArquivo = async (arquivoId) => {
-    const response = await api.post(`arquivos/${arquivoId}/aprovar/`);
+// --- AÇÕES DE APROVAÇÃO E FEEDBACK DE ARQUIVOS (SEM CABEÇALHO CUSTOMIZADO X-Cliente-ID) ---
+export const aprovarArquivo = async (arquivoId, dados = {}) => {
+    const clienteId = dados?.cliente_id || localStorage.getItem('cliente_id') || sessionStorage.getItem('cliente_id');
+    const payload = {
+        ...dados,
+        ...(clienteId ? { cliente_id: clienteId } : {}),
+    };
+    const params = clienteId ? { cliente_id: clienteId } : {};
+    const response = await api.post(`arquivos/${arquivoId}/aprovar/`, payload, { params });
     return response.data;
 };
 
-export const rejeitarArquivo = async (arquivoId, { comentario, autor_nome = 'Cliente' }) => {
-    const response = await api.post(`arquivos/${arquivoId}/rejeitar/`, { comentario, autor_nome });
+export const rejeitarArquivo = async (arquivoId, dados = {}) => {
+    const clienteId = dados?.cliente_id || localStorage.getItem('cliente_id') || sessionStorage.getItem('cliente_id');
+    const payload = {
+        comentario: dados?.comentario || '',
+        autor_nome: dados?.autor_nome || 'Cliente',
+        ...(clienteId ? { cliente_id: clienteId } : {}),
+    };
+    const params = clienteId ? { cliente_id: clienteId } : {};
+    const response = await api.post(`arquivos/${arquivoId}/rejeitar/`, payload, { params });
     return response.data;
 };
 
-export const adicionarFeedbackArquivo = async (arquivoId, { comentario, autor_nome = 'Cliente' }) => {
-    const response = await api.post(`arquivos/${arquivoId}/feedback/`, { comentario, autor_nome });
+export const adicionarFeedbackArquivo = async (arquivoId, dados = {}) => {
+    const clienteId = dados?.cliente_id || localStorage.getItem('cliente_id') || sessionStorage.getItem('cliente_id');
+    const payload = {
+        comentario: dados?.comentario || '',
+        autor_nome: dados?.autor_nome || 'Cliente',
+        ...(clienteId ? { cliente_id: clienteId } : {}),
+    };
+    const params = clienteId ? { cliente_id: clienteId } : {};
+    const response = await api.post(`arquivos/${arquivoId}/feedback/`, payload, { params });
     return response.data;
 };
 

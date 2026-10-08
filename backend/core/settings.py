@@ -239,6 +239,12 @@ if csrf_trusted_env:
 elif not DEBUG:
     CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 
+from corsheaders.defaults import default_headers
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'x-cliente-id',
+]
+
 # ==============================================================================
 # REST FRAMEWORK: AUTENTICAÇÃO E RATE LIMITING (THROTTLING)
 # ==============================================================================
