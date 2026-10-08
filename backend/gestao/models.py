@@ -1,17 +1,48 @@
+import os
+import random
+import string
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.core.exceptions import ValidationError
 
-# TABELA DE CLIENTES 
+# Limites e Restrições de Segurança (Uploads)
+TAMANHO_MAXIMO_ARQUIVO_MB = 50
+TAMANHO_MAXIMO_ARQUIVO_BYTES = TAMANHO_MAXIMO_ARQUIVO_MB * 1024 * 1024
+
+EXTENSOES_PERMITIDAS = {
+    '.pdf', '.dwg', '.rvt', '.skp', '.jpg', '.jpeg', '.png', '.mp4'
+}
+
+EXTENSOES_PERIGOSAS = {
+    '.exe', '.sh', '.php', '.py', '.js', '.html', '.bat', '.cmd', '.vbs', '.msi'
+}
+
+def validar_arquivo_seguro(arquivo):
+    """
+    Validador de segurança para uploads de arquivos:
+    1. Bloqueia explicitamente extensões executáveis e perigosas.
+    2. Restringe à lista branca de extensões permitidas.
+    3. Bloqueia arquivos maiores que 50MB.
+    """
+    nome_arquivo = getattr(arquivo, 'name', '')
+    extensao = os.path.splitext(nome_arquivo)[1].lower()
+
+    if extensao in EXTENSOES_PERIGOSAS:
+        raise ValidationError(f"Upload bloqueado: Extensão '{extensao}' perigosa/proibida.")
+
+    if extensao not in EXTENSOES_PERMITIDAS:
+        permitidas = ', '.join(sorted(EXTENSOES_PERMITIDAS))
+        raise ValidationError(f"Extensão não permitida ('{extensao}'). Aceitas: {permitidas}.")
+
+    tamanho = getattr(arquivo, 'size', None)
+    if tamanho and tamanho > TAMANHO_MAXIMO_ARQUIVO_BYTES:
+        raise ValidationError(f"O arquivo excede o limite de {TAMANHO_MAXIMO_ARQUIVO_MB}MB.")
+
+
 class Cliente(models.Model):
-    usuario = models.OneToOneField(
-        User, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        related_name='cliente'
-    )
+    usuario = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='cliente')
     nome = models.CharField(max_length=200)
     foto = models.URLField(blank=True, null=True)
     codigo_acesso = models.CharField(max_length=8, blank=True, null=True)
@@ -23,7 +54,6 @@ class Cliente(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.codigo_acesso:
-            import random, string
             chars = string.ascii_uppercase + string.digits
             while True:
                 codigo = ''.join(random.choices(chars, k=6))
@@ -37,15 +67,13 @@ class Cliente(models.Model):
     def __str__(self):
         return self.nome
 
-# TABELA DE PROJETOS
+
 class Projeto(models.Model):
-    # Relacionamento 1 para N (Um cliente pode ter vários projetos)
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='projetos')
     nome_projeto = models.CharField(max_length=200)
     tipo_projeto = models.CharField(max_length=100, blank=True, null=True) 
     fase_atual = models.CharField(max_length=100, blank=True, null=True)   
     
-    # Endereço da Obra
     cep = models.CharField(max_length=20, blank=True, null=True)
     rua = models.CharField(max_length=200, blank=True, null=True)
     numero = models.CharField(max_length=20, blank=True, null=True)
@@ -57,6 +85,7 @@ class Projeto(models.Model):
 
     def __str__(self):
         return f"{self.nome_projeto} ({self.cliente.nome})"
+
 
 @receiver(post_save, sender=Projeto)
 def criar_pastas_padrao(sender, instance, created, **kwargs):
@@ -70,7 +99,7 @@ def criar_pastas_padrao(sender, instance, created, **kwargs):
         for p in pastas:
             Pasta.objects.create(nome=p, projeto=instance)
 
-# TABELA DE TAREFAS
+
 class Tarefa(models.Model):
     titulo = models.CharField(max_length=200)
     descricao = models.TextField(blank=True, null=True)
@@ -86,7 +115,7 @@ class Tarefa(models.Model):
     def __str__(self):
         return self.titulo
 
-# TABELA DE SUBTAREFAS
+
 class Subtarefa(models.Model):
     tarefa = models.ForeignKey(Tarefa, on_delete=models.CASCADE, related_name='subtarefas')
     titulo = models.CharField(max_length=200)
@@ -96,7 +125,7 @@ class Subtarefa(models.Model):
     def __str__(self):
         return self.titulo
 
-# TABELAS DO EXPLORADOR DE ARQUIVOS
+
 class Pasta(models.Model):
     nome = models.CharField(max_length=255)
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='pastas')
@@ -104,58 +133,26 @@ class Pasta(models.Model):
     pasta_pai = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='subpastas')
     criado_em = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        tornou_visivel = False
+        
+        # Identifica se a pasta está a ser atualizada e se a visibilidade mudou para True
+        if self.pk:
+            estado_anterior = Pasta.objects.get(pk=self.pk)
+            if not estado_anterior.visivel_cliente and self.visivel_cliente:
+                tornou_visivel = True
+
+        super().save(*args, **kwargs)
+
+        # Regra de Herança (Cascata): Se a pasta ficar visível, liberta os conteúdos internos
+        if tornou_visivel:
+            self.arquivos.update(visivel_cliente=True)
+            for subpasta in self.subpastas.all():
+                subpasta.visivel_cliente = True
+                subpasta.save()
+
     def __str__(self):
-        return f"{self.nome} - {self.projeto.nome_projeto}"
-
-import os
-from django.core.exceptions import ValidationError
-
-# Limite máximo de tamanho do arquivo: 50MB
-TAMANHO_MAXIMO_ARQUIVO_MB = 50
-TAMANHO_MAXIMO_ARQUIVO_BYTES = TAMANHO_MAXIMO_ARQUIVO_MB * 1024 * 1024
-
-# Whitelist estrita de extensões permitidas para arquitetura e mídia
-EXTENSOES_PERMITIDAS = {
-    '.pdf', '.dwg', '.rvt', '.skp', '.jpg', '.jpeg', '.png', '.mp4'
-}
-
-# Blacklist de extensões perigosas (scripts executáveis e código malicioso)
-EXTENSOES_PERIGOSAS = {
-    '.exe', '.sh', '.php', '.py', '.js', '.html', '.bat', '.cmd', '.vbs', '.msi'
-}
-
-def validar_arquivo_seguro(arquivo):
-    """
-    Validador de segurança para uploads de arquivos:
-    1. Bloqueia explicitamente extensões executáveis e perigosas (.exe, .sh, .php, etc.).
-    2. Restringe a lista branca de extensões permitidas de arquitetura e mídia (.pdf, .dwg, .rvt, .skp, .jpg, .jpeg, .png, .mp4).
-    3. Bloqueia arquivos que excedam 50MB.
-    """
-    nome_arquivo = getattr(arquivo, 'name', '')
-    extensao = os.path.splitext(nome_arquivo)[1].lower()
-
-    # 1. Bloqueio imediato de executáveis e scripts maliciosos
-    if extensao in EXTENSOES_PERIGOSAS:
-        raise ValidationError(
-            f"Upload bloqueado por segurança: A extensão '{extensao}' é potencialmente perigosa e proibida."
-        )
-
-    # 2. Restrição à lista branca de extensões permitidas
-    if extensao not in EXTENSOES_PERMITIDAS:
-        permitidas_formatadas = ', '.join(sorted(EXTENSOES_PERMITIDAS))
-        raise ValidationError(
-            f"Extensão de arquivo não permitida ('{extensao}'). "
-            f"Extensões aceitas: {permitidas_formatadas}."
-        )
-
-    # 3. Restrição de tamanho máximo de arquivo (50MB)
-    tamanho = getattr(arquivo, 'size', None)
-    if tamanho and tamanho > TAMANHO_MAXIMO_ARQUIVO_BYTES:
-        tamanho_mb = tamanho / (1024 * 1024)
-        raise ValidationError(
-            f"O arquivo excede o limite máximo permitido de {TAMANHO_MAXIMO_ARQUIVO_MB}MB "
-            f"(tamanho detectado: {tamanho_mb:.2f}MB)."
-        )
+        return f"{self.nome} ({self.projeto.nome_projeto})"
 
 
 class Arquivo(models.Model):
@@ -166,10 +163,7 @@ class Arquivo(models.Model):
     ]
 
     nome = models.CharField(max_length=255, blank=True, null=True)
-    arquivo = models.FileField(
-        upload_to='projetos_arquivos/',
-        validators=[validar_arquivo_seguro]
-    )
+    arquivo = models.FileField(upload_to='projetos_arquivos/', validators=[validar_arquivo_seguro])
     visivel_cliente = models.BooleanField(default=False)
     tamanho_bytes = models.PositiveIntegerField(null=True, blank=True)
     projeto = models.ForeignKey('Projeto', related_name='arquivos', on_delete=models.CASCADE)
@@ -177,21 +171,18 @@ class Arquivo(models.Model):
     versao_de = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='versoes')
     tarefa = models.ForeignKey('Tarefa', on_delete=models.SET_NULL, null=True, blank=True)
     comentario = models.TextField(blank=True, null=True)
-    status_aprovacao = models.CharField(
-        max_length=20,
-        choices=STATUS_APROVACAO_CHOICES,
-        default='PENDENTE'
-    )
+    status_aprovacao = models.CharField(max_length=20, choices=STATUS_APROVACAO_CHOICES, default='PENDENTE')
     criado_em = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        # REGRA CRÍTICA DE STACKING: Qualquer novo upload/versão nasce OBRIGATORIAMENTE como 'PENDENTE'
+        # REGRA CRÍTICA DE STACKING: Qualquer novo upload nasce OBRIGATORIAMENTE como 'PENDENTE'
         if not self.pk:
             self.status_aprovacao = 'PENDENTE'
         super().save(*args, **kwargs)
 
     def __str__(self):
         return self.nome or self.arquivo.name
+
 
 class Feedback(models.Model):
     arquivo = models.ForeignKey(Arquivo, related_name='feedbacks', on_delete=models.CASCADE)
@@ -201,6 +192,7 @@ class Feedback(models.Model):
 
     def __str__(self):
         return f"Feedback de {self.autor_nome} no arquivo {self.arquivo_id}"
+
 
 class Evento(models.Model):
     titulo = models.CharField(max_length=255)
@@ -219,6 +211,7 @@ class Evento(models.Model):
 
     def __str__(self):
         return f"{self.titulo} - {self.data}"
+
 
 class CodigoValidacao(models.Model):
     TIPO_CHOICES = [

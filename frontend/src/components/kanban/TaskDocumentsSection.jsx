@@ -40,10 +40,21 @@ export default function TaskDocumentsSection({
                 <ApprovalStatusBadge status={arq.status_aprovacao} size="xs" />
                 {arq.feedbacks?.length > 0 && (
                   <span
-                    className="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-1.5 py-0.2 rounded border border-indigo-200 shrink-0"
+                    className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-indigo-200 shrink-0"
                     title={`${arq.feedbacks.length} feedback(s)`}
                   >
-                    💬 {arq.feedbacks.length}
+                    <svg
+                      className="w-3 h-3 text-indigo-600 shrink-0"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                    <span>{arq.feedbacks.length}</span>
                   </span>
                 )}
               </div>

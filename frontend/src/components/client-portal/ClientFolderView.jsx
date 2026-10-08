@@ -185,8 +185,22 @@ export default function ClientFolderView({
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <ApprovalStatusBadge status={arq.status_aprovacao} size="sm" />
                     {totalFeedbacks > 0 && (
-                      <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium flex items-center gap-1 border border-slate-200">
-                        💬 {totalFeedbacks}
+                      <span
+                        className="flex items-center gap-1.5 bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-[11px] font-medium border border-slate-200"
+                        title={`${totalFeedbacks} feedback(s) registrado(s)`}
+                      >
+                        <svg
+                          className="w-3.5 h-3.5 text-slate-500 shrink-0"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg>
+                        <span>{totalFeedbacks}</span>
                       </span>
                     )}
                   </div>

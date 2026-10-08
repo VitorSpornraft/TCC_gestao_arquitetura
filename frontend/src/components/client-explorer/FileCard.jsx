@@ -110,10 +110,21 @@ export default function FileCard({
 
           {arq.feedbacks?.length > 0 && (
             <span
-              className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-md text-[11px] font-medium border border-slate-200"
+              className="flex items-center gap-1.5 bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-[11px] font-medium border border-slate-200"
               title={`${arq.feedbacks.length} feedback(s) registrado(s)`}
             >
-              💬 {arq.feedbacks.length}
+              <svg
+                className="w-3.5 h-3.5 text-slate-500 shrink-0"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              <span>{arq.feedbacks.length}</span>
             </span>
           )}
         </div>
