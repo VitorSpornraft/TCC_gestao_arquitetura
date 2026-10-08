@@ -371,7 +371,10 @@ export default function App() {
             onAtualizarDados={carregarDados}
             onLoginSucesso={(_clienteInfo) => {
               const t =
-                localStorage.getItem("token") || sessionStorage.getItem("token");
+                localStorage.getItem("access") ||
+                localStorage.getItem("token") ||
+                sessionStorage.getItem("access") ||
+                sessionStorage.getItem("token");
               setToken(t);
               setUserRole("cliente");
               setModoCliente(true);

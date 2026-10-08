@@ -59,7 +59,6 @@ export default function ClientFilePage({ onAtualizarDados }) {
         const params = clienteId ? { cliente_id: String(clienteId) } : {};
         const headers = {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          ...(clienteId ? { 'X-Cliente-ID': String(clienteId) } : {}),
         };
 
         // Sem try/catch aninhado. Deixe o catch externo capturar o erro.
@@ -185,7 +184,7 @@ export default function ClientFilePage({ onAtualizarDados }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-10 font-sans text-slate-800">
+    <div className="min-h-screen w-full bg-slate-50 pb-32 font-sans text-slate-800">
       {/* HEADER DA PÁGINA (DUAS LINHAS: NAVEGAÇÃO E INFORMAÇÕES) */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-xs">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex flex-col">

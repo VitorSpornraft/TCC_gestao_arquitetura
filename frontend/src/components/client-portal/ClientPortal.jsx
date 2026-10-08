@@ -363,7 +363,7 @@ export default function ClientPortal({
   // --- TELA DE LOGIN ---
   if (!clienteLogado) {
     return (
-      <div className="min-h-screen w-full bg-slate-50 flex flex-col justify-center items-center p-6 font-sans animate-fadeIn">
+      <div className="min-h-screen w-full bg-slate-50 flex flex-col justify-center items-center p-6 pb-32 font-sans animate-fadeIn">
         <div className="w-full max-w-md flex flex-col items-center">
           <div className="p-3 bg-indigo-600 rounded-2xl shadow-lg mb-4">
             <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -473,7 +473,7 @@ export default function ClientPortal({
     );
 
     return (
-      <div className="min-h-screen w-full bg-slate-50 p-6 sm:p-8 font-sans animate-fadeIn flex flex-col items-center">
+      <div className="min-h-screen w-full bg-slate-50 p-6 sm:p-8 pb-32 font-sans animate-fadeIn flex flex-col items-center">
         <div className="w-full max-w-5xl">
           <button
             onClick={() => setProjetoAberto(null)}
@@ -591,7 +591,7 @@ export default function ClientPortal({
 
   // View inicial do Cliente Logado (Lista de Projetos)
   return (
-    <div className="min-h-screen w-full bg-slate-50 p-6 sm:p-8 font-sans animate-fadeIn flex flex-col items-center">
+    <div className="min-h-screen w-full bg-slate-50 p-6 sm:p-8 pb-32 font-sans animate-fadeIn flex flex-col items-center">
       <div className="w-full max-w-5xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200">
           <div>
