@@ -1,10 +1,17 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import api, { API_BASE_URL } from "../../api";
 import bgImage from "../../assets/imgLogin.jpg";
 import RecuperarSenhaModal from "./RecuperarSenhaModal";
 
-export default function Login({ onLoginSucesso, onAbrirCadastro, onAbrirCliente }) {
+export default function Login({
+  onLoginSucesso,
+  onAbrirCadastro,
+  onAbrirCliente,
+  carregarDados,
+}) {
+  const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [erro, setErro] = useState("");
@@ -36,16 +43,29 @@ export default function Login({ onLoginSucesso, onAbrirCadastro, onAbrirCliente 
 
       const nomeParaSalvar = username.split("@")[0];
 
-      if (lembrar) {
-        localStorage.setItem("token", token);
-        localStorage.setItem("usuario_nome", nomeParaSalvar);
-      } else {
+      localStorage.setItem("access", token);
+      localStorage.setItem("token", token);
+      if (res.data.refresh) {
+        localStorage.setItem("refresh", res.data.refresh);
+      }
+      localStorage.setItem("usuario_nome", nomeParaSalvar);
+
+      if (!lembrar) {
+        sessionStorage.setItem("access", token);
         sessionStorage.setItem("token", token);
         sessionStorage.setItem("usuario_nome", nomeParaSalvar);
-        localStorage.removeItem("token");
       }
 
-      onLoginSucesso();
+      // 3. Força a busca de dados ANTES ou juntamente com a navegação
+      if (typeof carregarDados === "function") {
+        await carregarDados();
+      }
+
+      if (typeof onLoginSucesso === "function") {
+        await onLoginSucesso();
+      }
+
+      navigate("/");
     } catch {
       setErro("Credenciais inválidas. Tente novamente.");
     }

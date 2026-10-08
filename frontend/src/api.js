@@ -10,7 +10,11 @@ const api = axios.create({
 });
 
 // Inicialização imediata do header se já houver token no storage
-const tokenInicial = localStorage.getItem('token') || sessionStorage.getItem('token');
+const tokenInicial =
+    localStorage.getItem('access') ||
+    localStorage.getItem('token') ||
+    sessionStorage.getItem('access') ||
+    sessionStorage.getItem('token');
 if (tokenInicial) {
     api.defaults.headers.common['Authorization'] = `Bearer ${tokenInicial}`;
 }
@@ -18,7 +22,11 @@ if (tokenInicial) {
 // Interceptor para injetar o token JWT do arquiteto ou identificador do cliente automaticamente
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        const token =
+            localStorage.getItem('access') ||
+            localStorage.getItem('token') ||
+            sessionStorage.getItem('access') ||
+            sessionStorage.getItem('token');
         if (token) {
             config.headers = config.headers || {};
             config.headers['Authorization'] = `Bearer ${token}`;

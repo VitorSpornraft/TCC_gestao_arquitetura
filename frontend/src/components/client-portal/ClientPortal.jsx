@@ -74,7 +74,11 @@ export default function ClientPortal({
 
     try {
       setCarregandoObras(true);
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const token =
+        localStorage.getItem('access') ||
+        localStorage.getItem('token') ||
+        sessionStorage.getItem('access') ||
+        sessionStorage.getItem('token');
       if (token) {
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       }
@@ -205,13 +209,9 @@ export default function ClientPortal({
         };
 
         const token = data.access;
+        const idSalvo = String(clienteInfo.id);
 
-        // REGRA CRÍTICA 1: Atualização Imediata do header do Axios ANTES de atualizar navegação/estados
-        if (token) {
-          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        }
-
-        // REGRA CRÍTICA 2: Isolamento de Papéis (Role)
+        // 1. Grava o token e o cliente_id no localStorage de forma síncrona
         localStorage.setItem('userRole', 'cliente');
         sessionStorage.setItem('userRole', 'cliente');
 
@@ -225,16 +225,19 @@ export default function ClientPortal({
           localStorage.setItem('refresh', data.refresh);
           sessionStorage.setItem('refresh', data.refresh);
         }
-        if (clienteInfo?.id) {
-          const cId = String(clienteInfo.id);
-          setClienteId(cId);
-          localStorage.setItem('cliente_id', cId);
-          sessionStorage.setItem('cliente_id', cId);
-        }
+
+        localStorage.setItem('cliente_id', idSalvo);
+        sessionStorage.setItem('cliente_id', idSalvo);
         localStorage.setItem('cliente_info', JSON.stringify(clienteInfo));
         sessionStorage.setItem('cliente_info', JSON.stringify(clienteInfo));
 
-        // 3. Atualiza dados locais recebidos da API e salva cache no storage
+        // 2. Atualiza o api.defaults.headers.common['Authorization'] IMEDIATAMENTE na mesma linha
+        if (token) api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+        // 3. LOGO EM SEGUIDA, antes de qualquer outra coisa, chame carregarObrasCliente(id_salvo) explicitamente
+        await carregarObrasCliente(idSalvo);
+
+        // 4. Atualiza dados locais recebidos da API e salva cache no storage
         if (data.projetos) {
           setProjetosLocais(data.projetos);
           localStorage.setItem('cliente_projetos', JSON.stringify(data.projetos));
@@ -251,7 +254,8 @@ export default function ClientPortal({
           localStorage.setItem('cliente_arquivos', JSON.stringify(data.arquivos));
         }
 
-        // 4. Atualização síncrona do estado do cliente e notificação ao componente pai
+        // 5. Atualização dos estados do cliente e notificação ao componente pai
+        setClienteId(idSalvo);
         setClienteLogado(clienteInfo);
 
         if (onLoginSucesso) {

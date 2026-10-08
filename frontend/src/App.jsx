@@ -21,7 +21,13 @@ import api from "./api";
 export default function App() {
   const navigate = useNavigate();
   const [token, setToken] = useState(() => {
-    return localStorage.getItem("token") || sessionStorage.getItem("token") || null;
+    return (
+      localStorage.getItem("access") ||
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("access") ||
+      sessionStorage.getItem("token") ||
+      null
+    );
   });
 
   const [userRole, setUserRole] = useState(() => {
@@ -29,7 +35,11 @@ export default function App() {
   });
 
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    const t = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const t =
+      localStorage.getItem("access") ||
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("access") ||
+      sessionStorage.getItem("token");
     const role = localStorage.getItem("userRole") || sessionStorage.getItem("userRole");
     return Boolean(t && role === "arquiteto");
   });
@@ -66,7 +76,10 @@ export default function App() {
   // Inicialização e proteção de rotas no F5
   useEffect(() => {
     const tokenAtual =
-      localStorage.getItem("token") || sessionStorage.getItem("token");
+      localStorage.getItem("access") ||
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("access") ||
+      sessionStorage.getItem("token");
     const roleAtual =
       localStorage.getItem("userRole") || sessionStorage.getItem("userRole");
 
@@ -381,14 +394,17 @@ export default function App() {
               <Cadastro onVoltarLogin={() => setMostrarCadastro(false)} />
             ) : (
               <Login
-                onLoginSucesso={() => {
+                carregarDados={carregarDados}
+                onLoginSucesso={async () => {
                   const t =
+                    localStorage.getItem("access") ||
                     localStorage.getItem("token") ||
+                    sessionStorage.getItem("access") ||
                     sessionStorage.getItem("token");
                   setToken(t);
                   setUserRole("arquiteto");
                   setIsLoggedIn(true);
-                  carregarDados();
+                  await carregarDados();
                 }}
                 onAbrirCadastro={() => setMostrarCadastro(true)}
                 onAbrirCliente={() => {
@@ -402,6 +418,12 @@ export default function App() {
             renderPainelArquiteto()
           )
         }
+      />
+
+      {/* ROTA DASHBOARD (ALINHADA COM ARQUITETO) */}
+      <Route
+        path="/dashboard"
+        element={<Navigate to="/" replace />}
       />
 
       {/* FALLBACK PARA QUALQUER OUTRA ROTA */}
