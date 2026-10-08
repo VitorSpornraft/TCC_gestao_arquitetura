@@ -43,7 +43,10 @@ export default function ClientFilePage({ onAtualizarDados }) {
         setCarregandoArquivo(true);
         setErro('');
 
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        const token =
+          localStorage.getItem('access') ||
+          localStorage.getItem('token') ||
+          sessionStorage.getItem('token');
         if (token) {
           api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         }
@@ -59,13 +62,8 @@ export default function ClientFilePage({ onAtualizarDados }) {
           ...(clienteId ? { 'X-Cliente-ID': String(clienteId) } : {}),
         };
 
-        let res;
-        try {
-          res = await api.get(`arquivos/${id}/`, { params, headers });
-        } catch {
-          res = await api.get(`/api/arquivos/${id}/`, { params, headers });
-        }
-
+        // Sem try/catch aninhado. Deixe o catch externo capturar o erro.
+        const res = await api.get(`arquivos/${id}/`, { params, headers });
         if (ativo && res?.data) {
           setArquivoAtual(res.data);
           setErro('');
@@ -368,7 +366,7 @@ export default function ClientFilePage({ onAtualizarDados }) {
 
             {/* SEÇÃO DE AÇÃO DO CLIENTE (APROVAR / REJEITAR) */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
-              {arquivoAtual.status_aprovacao === 'PENDENTE' ? (
+              {(!arquivoAtual.status_aprovacao || arquivoAtual.status_aprovacao === 'PENDENTE') ? (
                 !modoRejeicao ? (
                   <div>
                     <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-3">
