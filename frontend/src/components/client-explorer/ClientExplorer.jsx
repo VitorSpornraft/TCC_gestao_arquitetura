@@ -133,18 +133,25 @@ export default function ClientExplorer({
     ? new Date(projetoSelecionado.criado_em).toLocaleDateString("pt-BR")
     : "Data não registrada";
 
-  const pastasFiltradas = listaPastas.filter((p) => {
-    if (!p) return false;
-    const pertenceProjeto =
-      String(p.projeto === "object" ? p.projeto?.id : p.projeto) ===
-      String(projetoSelecionado?.id);
-    const paiId = p.pasta_pai !== undefined ? p.pasta_pai : p.parent;
-    const noNivel =
-      pastaAtualId === null
-        ? !paiId || paiId === null
-        : String(paiId?.id || paiId) === String(pastaAtualId);
-    return pertenceProjeto && noNivel;
-  });
+  const pastasFiltradas = listaPastas
+    .filter((p) => {
+      if (!p) return false;
+      const pertenceProjeto =
+        String(typeof p.projeto === "object" ? p.projeto?.id : p.projeto) ===
+        String(projetoSelecionado?.id);
+      const paiId = p.pasta_pai !== undefined ? p.pasta_pai : p.parent;
+      const noNivel =
+        pastaAtualId === null
+          ? !paiId || paiId === null
+          : String(paiId?.id || paiId) === String(pastaAtualId);
+      return pertenceProjeto && noNivel;
+    })
+    .sort(
+      (a, b) =>
+        (a.nome || "").localeCompare(b.nome || "", undefined, {
+          sensitivity: "base",
+        }) || Number(a.id || 0) - Number(b.id || 0),
+    );
 
   const arquivosDaObra = listaArquivos.filter((a) => {
     if (!a) return false;
@@ -154,14 +161,23 @@ export default function ClientExplorer({
 
   const arquivosMaisRecentesDaObra = resolverArquivosVersaoRecente(arquivosDaObra);
 
-  const arquivosFiltrados = arquivosMaisRecentesDaObra.filter((a) => {
-    const pastaArquivoId = typeof a.pasta === "object" ? a.pasta?.id : a.pasta;
-    return (
-      pastaAtualId === null
-        ? !pastaArquivoId || pastaArquivoId === null
-        : String(pastaArquivoId) === String(pastaAtualId)
-    );
-  });
+  const arquivosFiltrados = arquivosMaisRecentesDaObra
+    .filter((a) => {
+      const pastaArquivoId = typeof a.pasta === "object" ? a.pasta?.id : a.pasta;
+      return (
+        pastaAtualId === null
+          ? !pastaArquivoId || pastaArquivoId === null
+          : String(pastaArquivoId) === String(pastaAtualId)
+      );
+    })
+    .sort((a, b) => {
+      const nomeA = a.nome || formatarNomeArquivo(a.arquivo) || "";
+      const nomeB = b.nome || formatarNomeArquivo(b.arquivo) || "";
+      return (
+        nomeA.localeCompare(nomeB, undefined, { sensitivity: "base" }) ||
+        Number(a.id || 0) - Number(b.id || 0)
+      );
+    });
 
   const tarefasDaObra = listaTarefas.filter(
     (t) =>

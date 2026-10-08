@@ -24,14 +24,31 @@ export default function ClientFolderView({
   // Lógica de 'Latest Version Resolution' para garantir que apenas a versão mais recente apareça
   const arquivosResolvidos = resolverArquivosVersaoRecente(arquivos);
 
-  // Filtragem dos arquivos pela pasta selecionada nas abas
-  const arquivosExibidos =
+  // Ordenação determinística das pastas
+  const pastasOrdenadas = [...pastas].sort(
+    (a, b) =>
+      (a.nome || '').localeCompare(b.nome || '', undefined, {
+        sensitivity: 'base',
+      }) || Number(a.id || 0) - Number(b.id || 0)
+  );
+
+  // Filtragem e ordenação determinística dos arquivos pela pasta selecionada nas abas
+  const arquivosBase =
     pastaAtivaId === 'todas'
       ? arquivosResolvidos
       : arquivosResolvidos.filter((a) => {
           const pId = typeof a.pasta === 'object' ? a.pasta?.id : a.pasta;
           return String(pId) === String(pastaAtivaId);
         });
+
+  const arquivosExibidos = [...arquivosBase].sort((a, b) => {
+    const nomeA = a.nome || (formatarNomeArquivo ? formatarNomeArquivo(a.arquivo) : '') || '';
+    const nomeB = b.nome || (formatarNomeArquivo ? formatarNomeArquivo(b.arquivo) : '') || '';
+    return (
+      nomeA.localeCompare(nomeB, undefined, { sensitivity: 'base' }) ||
+      Number(a.id || 0) - Number(b.id || 0)
+    );
+  });
 
   return (
     <div className="min-h-screen w-full bg-slate-50 p-6 sm:p-8 pb-32 font-sans animate-fadeIn flex flex-col items-center">
@@ -88,7 +105,7 @@ export default function ClientFolderView({
                 Todos os Documentos ({arquivosResolvidos.length})
               </button>
 
-              {pastas.map((pasta) => {
+              {pastasOrdenadas.map((pasta) => {
                 const qtdNoFolder = arquivosResolvidos.filter((a) => {
                   const pId = typeof a.pasta === 'object' ? a.pasta?.id : a.pasta;
                   return String(pId) === String(pasta.id);

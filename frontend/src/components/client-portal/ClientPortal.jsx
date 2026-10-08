@@ -449,17 +449,33 @@ export default function ClientPortal({
 
   // 2. Projeto Aberto: Exibe tela de documentos e pastas da obra selecionada
   if (projetoAberto) {
-    const pastasVisiveis = listaPastas.filter(
-      (p) =>
-        String(typeof p.projeto === 'object' ? p.projeto?.id : p.projeto) === String(projetoAberto.id) &&
-        p.visivel_cliente
-    );
+    const pastasVisiveis = listaPastas
+      .filter(
+        (p) =>
+          String(typeof p.projeto === 'object' ? p.projeto?.id : p.projeto) === String(projetoAberto.id) &&
+          p.visivel_cliente
+      )
+      .sort(
+        (a, b) =>
+          (a.nome || '').localeCompare(b.nome || '', undefined, {
+            sensitivity: 'base',
+          }) || Number(a.id || 0) - Number(b.id || 0)
+      );
     const arquivosDaObra = listaArquivos.filter(
       (a) =>
         String(typeof a.projeto === 'object' ? a.projeto?.id : a.projeto) === String(projetoAberto.id)
     );
     const arquivosMaisRecentes = resolverArquivosVersaoRecente(arquivosDaObra);
-    const arquivosVisiveis = arquivosMaisRecentes.filter((a) => a.visivel_cliente);
+    const arquivosVisiveis = arquivosMaisRecentes
+      .filter((a) => a.visivel_cliente)
+      .sort((a, b) => {
+        const nomeA = a.nome || a.arquivo || '';
+        const nomeB = b.nome || b.arquivo || '';
+        return (
+          nomeA.localeCompare(nomeB, undefined, { sensitivity: 'base' }) ||
+          Number(a.id || 0) - Number(b.id || 0)
+        );
+      });
 
     return (
       <ClientFolderView
