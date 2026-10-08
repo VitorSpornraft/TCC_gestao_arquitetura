@@ -3,6 +3,7 @@ import ApprovalStatusBadge from '../common/ApprovalStatusBadge';
 import {
   getFileUrl as helperGetFileUrl,
   formatarNomeArquivo as helperFormatName,
+  resolverArquivosVersaoRecente,
 } from '../client-explorer/fileUtils';
 
 export default function ClientFolderView({
@@ -20,11 +21,14 @@ export default function ClientFolderView({
 
   if (!projeto) return null;
 
+  // Lógica de 'Latest Version Resolution' para garantir que apenas a versão mais recente apareça
+  const arquivosResolvidos = resolverArquivosVersaoRecente(arquivos);
+
   // Filtragem dos arquivos pela pasta selecionada nas abas
   const arquivosExibidos =
     pastaAtivaId === 'todas'
-      ? arquivos
-      : arquivos.filter((a) => {
+      ? arquivosResolvidos
+      : arquivosResolvidos.filter((a) => {
           const pId = typeof a.pasta === 'object' ? a.pasta?.id : a.pasta;
           return String(pId) === String(pastaAtivaId);
         });
@@ -81,11 +85,11 @@ export default function ClientFolderView({
                     : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                Todos os Documentos ({arquivos.length})
+                Todos os Documentos ({arquivosResolvidos.length})
               </button>
 
               {pastas.map((pasta) => {
-                const qtdNoFolder = arquivos.filter((a) => {
+                const qtdNoFolder = arquivosResolvidos.filter((a) => {
                   const pId = typeof a.pasta === 'object' ? a.pasta?.id : a.pasta;
                   return String(pId) === String(pasta.id);
                 }).length;

@@ -1,13 +1,17 @@
 import ApprovalStatusBadge from "../common/ApprovalStatusBadge";
+import { resolverArquivosVersaoRecente } from "../client-explorer/fileUtils";
 
 export default function TaskDocumentsSection({
   arquivos,
   tarefaProjetoId,
   aoAbrirHistorico,
 }) {
-  const documentos = arquivos.filter(
-    (a) => String(a.projeto) === String(tarefaProjetoId) && !a.versao_de,
-  );
+  const arquivosDaObra = (arquivos || []).filter((a) => {
+    if (!a) return false;
+    const projId = typeof a.projeto === "object" ? a.projeto?.id : a.projeto;
+    return String(projId) === String(tarefaProjetoId);
+  });
+  const documentos = resolverArquivosVersaoRecente(arquivosDaObra);
 
   return (
     <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 space-y-2">

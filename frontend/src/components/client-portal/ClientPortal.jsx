@@ -4,6 +4,7 @@ import api, { loginCliente } from '../../api';
 import ClientLoginView from './ClientLoginView';
 import ClientProjectList from './ClientProjectList';
 import ClientFolderView from './ClientFolderView';
+import { resolverArquivosVersaoRecente } from '../client-explorer/fileUtils';
 
 export default function ClientPortal({
   clientes,
@@ -453,12 +454,12 @@ export default function ClientPortal({
         String(typeof p.projeto === 'object' ? p.projeto?.id : p.projeto) === String(projetoAberto.id) &&
         p.visivel_cliente
     );
-    const arquivosVisiveis = listaArquivos.filter(
+    const arquivosDaObra = listaArquivos.filter(
       (a) =>
-        String(typeof a.projeto === 'object' ? a.projeto?.id : a.projeto) === String(projetoAberto.id) &&
-        a.visivel_cliente &&
-        !a.versao_de
+        String(typeof a.projeto === 'object' ? a.projeto?.id : a.projeto) === String(projetoAberto.id)
     );
+    const arquivosMaisRecentes = resolverArquivosVersaoRecente(arquivosDaObra);
+    const arquivosVisiveis = arquivosMaisRecentes.filter((a) => a.visivel_cliente);
 
     return (
       <ClientFolderView

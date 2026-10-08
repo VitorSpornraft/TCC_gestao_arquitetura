@@ -3,12 +3,33 @@ import ApprovalStatusBadge from "../common/ApprovalStatusBadge";
 export default function VersionHistoryModal({ gerenciarVersoesDe, setGerenciarVersoesDe, listaArquivos, formatarNomeArquivo, getFileUrl, forcarDownload }) {
   if (!gerenciarVersoesDe) return null;
 
-  const todasVersoes = listaArquivos
-    .filter(a => {
-      const versaoDeId = typeof a.versao_de === 'object' && a.versao_de !== null ? a.versao_de.id : a.versao_de;
-      return String(a.id) === String(gerenciarVersoesDe.id) || String(versaoDeId) === String(gerenciarVersoesDe.id);
-    })
-    .sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
+  const idRaizAlvo = String(
+    gerenciarVersoesDe.arquivo_raiz_id ||
+    gerenciarVersoesDe.arquivo_raiz?.id ||
+    (typeof gerenciarVersoesDe.versao_de === 'object' && gerenciarVersoesDe.versao_de !== null
+      ? gerenciarVersoesDe.versao_de.id
+      : gerenciarVersoesDe.versao_de) ||
+    gerenciarVersoesDe.id
+  );
+
+  const todasVersoes = (
+    Array.isArray(gerenciarVersoesDe.todas_versoes) && gerenciarVersoesDe.todas_versoes.length > 0
+      ? gerenciarVersoesDe.todas_versoes
+      : (listaArquivos || []).filter((a) => {
+          const versaoDeId =
+            typeof a.versao_de === 'object' && a.versao_de !== null
+              ? a.versao_de.id
+              : a.versao_de;
+          return String(a.id) === idRaizAlvo || String(versaoDeId) === idRaizAlvo;
+        })
+  )
+    .slice()
+    .sort((a, b) => {
+      const dataA = a.criado_em ? new Date(a.criado_em).getTime() : 0;
+      const dataB = b.criado_em ? new Date(b.criado_em).getTime() : 0;
+      if (dataB !== dataA) return dataB - dataA;
+      return Number(b.id || 0) - Number(a.id || 0);
+    });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/60 backdrop-blur-xs p-4 animate-fadeIn">

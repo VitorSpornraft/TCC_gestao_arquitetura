@@ -10,6 +10,7 @@ import {
   getFileUrl,
   isArquivoPdf,
   isArquivoImagem,
+  resolverArquivosVersaoRecente,
 } from "./fileUtils";
 import ImagePreviewModal from "./ImagePreviewModal";
 import FolderModal from "./FolderModal";
@@ -145,17 +146,21 @@ export default function ClientExplorer({
     return pertenceProjeto && noNivel;
   });
 
-  const arquivosFiltrados = listaArquivos.filter((a) => {
+  const arquivosDaObra = listaArquivos.filter((a) => {
     if (!a) return false;
-    const pertenceProjeto =
-      String(a.projeto === "object" ? a.projeto?.id : a.projeto) ===
-      String(projetoSelecionado?.id);
-    const pastaArquivoId = a.pasta !== undefined ? a.pasta : null;
-    const naPasta =
+    const projId = typeof a.projeto === "object" ? a.projeto?.id : a.projeto;
+    return String(projId) === String(projetoSelecionado?.id);
+  });
+
+  const arquivosMaisRecentesDaObra = resolverArquivosVersaoRecente(arquivosDaObra);
+
+  const arquivosFiltrados = arquivosMaisRecentesDaObra.filter((a) => {
+    const pastaArquivoId = typeof a.pasta === "object" ? a.pasta?.id : a.pasta;
+    return (
       pastaAtualId === null
         ? !pastaArquivoId || pastaArquivoId === null
-        : String(pastaArquivoId?.id || pastaArquivoId) === String(pastaAtualId);
-    return pertenceProjeto && naPasta && !a.versao_de;
+        : String(pastaArquivoId) === String(pastaAtualId)
+    );
   });
 
   const tarefasDaObra = listaTarefas.filter(
@@ -280,7 +285,9 @@ export default function ClientExplorer({
     formData.append("nome", nomeOriginal.join("."));
 
     if (ehNovaVersao && fluxoVersao.arquivoPai) {
-      formData.append("versao_de", fluxoVersao.arquivoPai.id);
+      const idRaizParaVersao =
+        fluxoVersao.arquivoPai.arquivo_raiz_id || fluxoVersao.arquivoPai.id;
+      formData.append("versao_de", idRaizParaVersao);
       if (fluxoVersao.tarefaId) formData.append("tarefa", fluxoVersao.tarefaId);
       if (fluxoVersao.comentario)
         formData.append("comentario", fluxoVersao.comentario);
@@ -384,13 +391,10 @@ export default function ClientExplorer({
       {/* Grid de Pastas e Arquivos */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {pastasFiltradas.map((pasta) => {
-          const qtdArquivos = listaArquivos.filter((a) => {
-            if (!a) return false;
-            const pastaArquivoId = a.pasta !== undefined ? a.pasta : null;
-            return (
-              String(pastaArquivoId?.id || pastaArquivoId) ===
-                String(pasta.id) && !a.versao_de
-            );
+          const qtdArquivos = arquivosMaisRecentesDaObra.filter((a) => {
+            const pastaArquivoId =
+              typeof a.pasta === "object" ? a.pasta?.id : a.pasta;
+            return String(pastaArquivoId) === String(pasta.id);
           }).length;
 
           return (
@@ -418,12 +422,17 @@ export default function ClientExplorer({
 
         {arquivosFiltrados.map((arq) => {
           const nomeExibicao = formatarNomeArquivo(arq.arquivo);
-          const qtdVersoes = listaArquivos.filter(
-            (a) =>
-              String(
-                a.versao_de === "object" ? a.versao_de?.id : a.versao_de,
-              ) === String(arq.id),
-          ).length;
+          const qtdVersoes =
+            arq.qtd_versoes !== undefined
+              ? arq.qtd_versoes
+              : listaArquivos.filter(
+                  (a) =>
+                    String(
+                      typeof a.versao_de === "object"
+                        ? a.versao_de?.id
+                        : a.versao_de,
+                    ) === String(arq.arquivo_raiz_id || arq.id),
+                ).length;
 
           return (
             <FileCard
@@ -439,7 +448,7 @@ export default function ClientExplorer({
               onToggleVisibilidade={toggleVisibilidadeArquivo}
               onGerenciarVersoes={(e, a) => {
                 e.stopPropagation();
-                setGerenciarVersoesDe(a);
+                setGerenciarVersoesDe(a.arquivo_raiz || a);
               }}
               onDeletar={deletarArquivo}
             />
