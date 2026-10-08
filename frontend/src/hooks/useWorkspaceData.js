@@ -62,7 +62,7 @@ export default function useWorkspaceData() {
     const role =
       localStorage.getItem("userRole") || sessionStorage.getItem("userRole");
 
-    if (access && role === "arquiteto") {
+    if (access && (role === "arquiteto" || role === "cliente")) {
       carregarDados();
     }
   }, [carregarDados]);
