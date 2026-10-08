@@ -497,7 +497,7 @@ export default function ClientPortal({
             </div>
           </div>
 
-          <div className="flex items-center justify-between mb-4 px-1">
+          <div className="flex flex-col gap-1 mb-4 md:flex-row md:items-center md:justify-between px-1">
             <h3 className="text-lg font-bold text-slate-900">Documentos & Plantas da Obra</h3>
             <span className="text-xs text-slate-500 font-medium">
               {arquivosVisiveis.length} documento{arquivosVisiveis.length === 1 ? '' : 's'} disponível{arquivosVisiveis.length === 1 ? '' : 'is'}
