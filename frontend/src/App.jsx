@@ -129,6 +129,12 @@ export default function App() {
     sessionStorage.removeItem("cliente_info");
     localStorage.removeItem("usuario_nome");
     sessionStorage.removeItem("usuario_nome");
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {
+      // Silencia restrições locais de storage
+    }
     setToken(null);
     setIsLoggedIn(false);
     setUserRole(null);

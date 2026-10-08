@@ -42,6 +42,58 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
+// Interceptor global de resposta para captura de 401 (Sessão Expirada / Token Inválido)
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            const urlRequisicao = error.config?.url || '';
+            // Não expulsa se o 401 veio da própria tentativa de autenticação com credenciais incorretas
+            const isTentativaLogin =
+                urlRequisicao.includes('auth/cliente-login') ||
+                urlRequisicao.includes('token');
+
+            if (!isTentativaLogin) {
+                // Limpeza TOTAL do estado e dos storages para eliminar estado zumbi
+                delete api.defaults.headers.common['Authorization'];
+                delete api.defaults.headers.common['X-Cliente-ID'];
+
+                const chaves = [
+                    'access',
+                    'token',
+                    'refresh',
+                    'userRole',
+                    'cliente_id',
+                    'cliente_info',
+                    'cliente_projetos',
+                    'cliente_pastas',
+                    'cliente_arquivos',
+                    'cliente_projeto_ativo',
+                    'usuario_nome',
+                ];
+
+                chaves.forEach((chave) => {
+                    localStorage.removeItem(chave);
+                    sessionStorage.removeItem(chave);
+                });
+
+                try {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                } catch {
+                    // Silencia erro se storage estiver restrito
+                }
+
+                // Força redirecionamento imediato para a tela de login
+                if (window.location.pathname !== '/') {
+                    window.location.href = '/';
+                }
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 // --- ATUALIZAÇÃO DE VISIBILIDADE DE ARQUIVOS E PASTAS ---
 export const atualizarVisibilidadeArquivo = async (arquivoId, visivelCliente) => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');

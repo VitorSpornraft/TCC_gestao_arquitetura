@@ -97,6 +97,7 @@ export default function Navbar({
   telaAtual,
   setTelaAtual,
   setClienteSelecionado,
+  aoSair,
 }) {
   const [recolhido, setRecolhido] = useState(false);
 
@@ -107,11 +108,13 @@ export default function Navbar({
   const iniciais = nomeUsuario.substring(0, 2).toUpperCase();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("usuario_nome");
-    sessionStorage.removeItem("token");
-    sessionStorage.removeItem("usuario_nome");
-    window.location.reload();
+    if (typeof aoSair === "function") {
+      aoSair();
+    } else {
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = "/";
+    }
   };
 
   return (
@@ -191,6 +194,7 @@ export default function Navbar({
       <div className="pt-4 border-t border-zinc-100">
         {recolhido ? (
           <button
+            type="button"
             onClick={handleLogout}
             className="w-full flex justify-center p-2.5 rounded-xl text-zinc-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
             title="Encerrar Sessão"
@@ -229,6 +233,7 @@ export default function Navbar({
               </div>
             </div>
             <button
+              type="button"
               onClick={handleLogout}
               className="p-1.5 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
               title="Encerrar Sessão"
