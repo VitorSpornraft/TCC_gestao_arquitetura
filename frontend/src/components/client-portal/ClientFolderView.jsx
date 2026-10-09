@@ -70,16 +70,18 @@ export default function ClientFolderView({
         )}
 
         {/* CABEÇALHO DO PROJETO */}
-        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200 mb-8 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-          <div>
+        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200 mb-8 flex flex-col items-center text-center sm:flex-row sm:text-left sm:justify-between gap-4">
+          <div className="flex flex-col items-center sm:items-start">
             <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
               {projeto.nome_projeto}
             </h2>
             <p className="text-slate-500 text-sm mt-1">
-              {projeto.rua || 'Endereço não informado'}
+              {projeto.rua 
+                ? `${projeto.rua}${projeto.numero ? ', ' + projeto.numero : ''}${projeto.bairro ? ' - ' + projeto.bairro : ''}${projeto.cidade ? ', ' + projeto.cidade : ''}${projeto.uf ? ' / ' + projeto.uf : ''}`
+                : 'Endereço não informado'}
             </p>
           </div>
-          <div className="px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl text-center self-start sm:self-auto">
+          <div className="px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl text-center shrink-0">
             <span className="block text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-0.5">
               Status da Obra
             </span>

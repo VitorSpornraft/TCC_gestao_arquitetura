@@ -25,9 +25,9 @@ export default function ClientLoginView({
     e.preventDefault();
     const digitos = (telefone || '').replace(/\D/g, '');
 
-    // Validação para impedir submissão sem o número completo de dígitos (com DDD, 10 ou 11 dígitos)
-    if (digitos.length < 10) {
-      setErroValidacao('Por favor, informe o número de telefone completo com DDD (10 ou 11 dígitos).');
+    // Validação para impedir submissão sem o número completo de dígitos (com DDD, 11 dígitos)
+    if (digitos.length < 11) {
+      setErroValidacao('Informe o número de telefone completo com DDD (11 dígitos).');
       return;
     }
 
@@ -66,12 +66,12 @@ export default function ClientLoginView({
               type="tel"
               inputMode="numeric"
               maxLength={11}
-              minLength={10}
+              minLength={11}
               required
               value={telefone}
               onChange={handleTelefoneChange}
               className="block w-full rounded-xl border border-slate-300 px-4 py-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-900 font-medium"
-              placeholder="Número do telefone com DDD (apenas números)"
+              placeholder="Número do telefone (apenas números)"
               autoFocus
             />
           </div>

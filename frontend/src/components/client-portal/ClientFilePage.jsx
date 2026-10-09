@@ -340,18 +340,14 @@ export default function ClientFilePage({ onAtualizarDados }) {
 
             {/* STATUS DE VALIDAÇÃO E ALERTAS */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                    Status de Validação
-                  </span>
-                  <div className="flex items-center gap-3">
-                    <ApprovalStatusBadge status={arquivoAtual.status_aprovacao} size="lg" />
-                    <span className="text-xs text-slate-500 font-medium">
-                      {feedbacks.length} feedback{feedbacks.length === 1 ? '' : 's'}
-                    </span>
-                  </div>
-                </div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Status de Validação
+              </span>
+              <div className="flex items-center justify-between w-full">
+                <ApprovalStatusBadge status={arquivoAtual.status_aprovacao} size="lg" />
+                <span className="text-xs text-slate-500 font-medium ml-auto">
+                  {feedbacks.length} feedback{feedbacks.length === 1 ? '' : 's'}
+                </span>
               </div>
 
               {sucesso && (

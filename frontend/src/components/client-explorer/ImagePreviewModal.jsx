@@ -170,9 +170,9 @@ export default function ImagePreviewModal({
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                 Status de Validação do Cliente
               </span>
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-3 w-full">
                 <ApprovalStatusBadge status={arquivoAtual.status_aprovacao} size="md" />
-                <span className="text-xs text-slate-500 font-medium">
+                <span className="text-xs text-slate-500 font-medium ml-auto">
                   {feedbacks.length} registro{feedbacks.length === 1 ? '' : 's'}
                 </span>
               </div>
