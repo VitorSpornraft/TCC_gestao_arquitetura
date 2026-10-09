@@ -245,8 +245,9 @@ export default function ClientPortal({
     const telLimpo = (telefone || '').trim();
     const codigoLimpo = (codigo || '').trim().toUpperCase();
 
-    if (!telLimpo || !codigoLimpo) {
-      setErro('Código de acesso ou telefone inválidos.');
+    const telDigitos = telLimpo.replace(/\D/g, '');
+    if (!telLimpo || !codigoLimpo || telDigitos.length < 10) {
+      setErro('Por favor, informe o telefone completo com DDD (10 ou 11 dígitos).');
       return;
     }
 
