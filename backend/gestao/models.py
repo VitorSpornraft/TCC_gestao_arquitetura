@@ -109,12 +109,15 @@ class Tarefa(models.Model):
     status = models.CharField(max_length=50, default='WIP')
     progresso = models.IntegerField(default=0)
     arquivado = models.BooleanField(default=False)
-    projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='tarefas')
+    projeto = models.ForeignKey('Projeto', on_delete=models.CASCADE, related_name='tarefas')
     criado_em = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        if self.status == 'PUBLISHED':
+        status_seguro = str(self.status).upper().strip() if self.status else ''
+
+        if status_seguro == 'PUBLISHED':
             self.progresso = 100
+            self.status = 'PUBLISHED' 
         elif self.pk:
             total_sub = self.subtarefas.count()
             if total_sub > 0:
