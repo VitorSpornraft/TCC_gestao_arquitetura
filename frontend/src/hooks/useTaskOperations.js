@@ -99,7 +99,11 @@ export default function useTaskOperations({
       const novasTarefas = tarefas.map((t) => {
         if (t.id === tarefaId) {
           const subsAtuais = t.subtarefas || [];
-          return { ...t, subtarefas: [...subsAtuais, res.data] };
+          const novasSubs = [...subsAtuais, res.data];
+          const total = novasSubs.length;
+          const concluidas = novasSubs.filter((s) => s.concluida).length;
+          const progresso = total > 0 ? Math.round((concluidas / total) * 100) : 0;
+          return { ...t, subtarefas: novasSubs, progresso };
         }
         return t;
       });
@@ -123,11 +127,18 @@ export default function useTaskOperations({
       const tId = tarefaId || sub.tarefa;
       const novasTarefas = tarefas.map((t) => {
         if (t.id === tId) {
+          const novasSubs = t.subtarefas.map((s) =>
+            s.id === sub.id ? res.data : s,
+          );
+          const total = novasSubs.length;
+          const concluidas = novasSubs.filter((s) => s.concluida).length;
+          const progresso = total > 0 ? Math.round((concluidas / total) * 100) : 0;
+          const status = total > 0 && concluidas === total ? "PUBLISHED" : t.status;
           return {
             ...t,
-            subtarefas: t.subtarefas.map((s) =>
-              s.id === sub.id ? res.data : s,
-            ),
+            subtarefas: novasSubs,
+            progresso,
+            status,
           };
         }
         return t;
@@ -147,9 +158,14 @@ export default function useTaskOperations({
       await api.delete(`subtarefas/${subId}/`);
       const novasTarefas = tarefas.map((t) => {
         if (t.id === tarefaId) {
+          const novasSubs = t.subtarefas.filter((s) => s.id !== subId);
+          const total = novasSubs.length;
+          const concluidas = novasSubs.filter((s) => s.concluida).length;
+          const progresso = total > 0 ? Math.round((concluidas / total) * 100) : 0;
           return {
             ...t,
-            subtarefas: t.subtarefas.filter((s) => s.id !== subId),
+            subtarefas: novasSubs,
+            progresso,
           };
         }
         return t;

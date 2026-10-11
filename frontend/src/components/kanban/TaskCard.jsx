@@ -19,12 +19,8 @@ export default function TaskCard({
   const totalSub = tarefa.subtarefas?.length || 0;
   const concluidasSub =
     tarefa.subtarefas?.filter((s) => s.concluida).length || 0;
-  const progresso =
-    totalSub > 0
-      ? Math.round((concluidasSub / totalSub) * 100)
-      : tarefa.status === "REALIZADO"
-        ? 100
-        : 0;
+  const percentual =
+    tarefa.status === "PUBLISHED" ? 100 : (tarefa.progresso ?? 0);
   const atrasado = isAtrasado(tarefa.prazo, tarefa.status);
 
   const temRejeitado = arquivosDaTarefa.some((a) => a.status_aprovacao === "REJEITADO");
@@ -242,12 +238,12 @@ export default function TaskCard({
       <div className="space-y-1.5 pt-2 border-t border-zinc-100">
         <div className="flex justify-between text-[11px] font-medium text-zinc-500">
           <span>Progresso</span>
-          <span className="font-semibold text-zinc-700">{progresso}%</span>
+          <span className="font-semibold text-zinc-700">{percentual}%</span>
         </div>
         <div className="w-full bg-zinc-100 h-1.5 rounded-full overflow-hidden">
           <div
             className="bg-indigo-600 h-full transition-all duration-300"
-            style={{ width: `${progresso}%` }}
+            style={{ width: `${percentual}%` }}
           ></div>
         </div>
       </div>
