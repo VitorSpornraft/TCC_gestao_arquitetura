@@ -112,6 +112,15 @@ class Tarefa(models.Model):
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='tarefas')
     criado_em = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        if self.status == 'PUBLISHED': 
+            self.progresso = 100
+            
+        super().save(*args, **kwargs)
+
+        if self.pk and self.status == 'PUBLISHED':
+            self.subtarefas.update(concluida=True)
+
     def __str__(self):
         return self.titulo
 
@@ -121,6 +130,28 @@ class Subtarefa(models.Model):
     titulo = models.CharField(max_length=200)
     concluida = models.BooleanField(default=False)
     criado_em = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        tarefa_pai = self.tarefa
+        total_subtarefas = tarefa_pai.subtarefas.count()
+        concluidas = tarefa_pai.subtarefas.filter(concluida=True).count()
+
+        if total_subtarefas > 0:
+            novo_progresso = int((concluidas / total_subtarefas) * 100)
+            precisa_salvar = False
+
+            if tarefa_pai.progresso != novo_progresso:
+                tarefa_pai.progresso = novo_progresso
+                precisa_salvar = True
+
+            if concluidas == total_subtarefas and tarefa_pai.status != 'PUBLISHED':
+                tarefa_pai.status = 'PUBLISHED'
+                precisa_salvar = True
+
+            if precisa_salvar:
+                tarefa_pai.save()
 
     def __str__(self):
         return self.titulo
