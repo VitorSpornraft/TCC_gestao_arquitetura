@@ -39,8 +39,8 @@ export default function Calendar({ projetos = [], tarefas = [] }) {
   const [confirmacao, setConfirmacao] = useState(null);
 
   useEffect(() => {
-    axios
-      .get(`${API_BASE_URL}/eventos/`)
+    api
+      .get("eventos/")
       .then((resposta) => setEventos(resposta.data))
       .catch((error) => console.error("Erro ao carregar eventos:", error));
   }, []);

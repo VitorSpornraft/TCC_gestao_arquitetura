@@ -71,7 +71,7 @@ export default function ClientLoginView({
               value={telefone}
               onChange={handleTelefoneChange}
               className="block w-full rounded-xl border border-slate-300 px-4 py-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-900 font-medium"
-              placeholder="Número do telefone (apenas números)"
+              placeholder="Apenas números (com DDD)."
               autoFocus
             />
           </div>
