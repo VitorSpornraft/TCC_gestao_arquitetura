@@ -1,4 +1,3 @@
-import TaskDocumentsSection from "./TaskDocumentsSection";
 import TaskChecklistSection from "./TaskChecklistSection";
 
 export default function TaskEditModal({
@@ -6,8 +5,6 @@ export default function TaskEditModal({
   setTarefaModal,
   aoSalvarEdicaoModal,
   projetos,
-  arquivos,
-  aoAbrirHistorico,
   aoToggleSubtarefa,
   aoDeletarSubtarefa,
   novaSubtarefaModalText,
@@ -139,13 +136,6 @@ export default function TaskEditModal({
               </select>
             </div>
           </div>
-
-          {/* LISTAGEM DE DOCUMENTOS DA OBRA */}
-          <TaskDocumentsSection
-            arquivos={arquivos}
-            tarefaProjetoId={tarefaModal.projeto}
-            aoAbrirHistorico={aoAbrirHistorico}
-          />
 
           {/* CHECKLIST */}
           <TaskChecklistSection
