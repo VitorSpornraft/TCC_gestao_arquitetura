@@ -33,7 +33,7 @@ const createEvent = (data) => ({
 export default function Calendar({ projetos = [], tarefas = [] }) {
   const hoje = new Date().toISOString().split("T")[0];
   const [eventos, setEventos] = useState([]);
-  const [dataAtual, setDataAtual] = useState(new Date(2026, 8, 1));
+  const [dataAtual, setDataAtual] = useState(new Date());
   const [diaSelecionado, setDiaSelecionado] = useState(hoje);
   const [eventoModal, setEventoModal] = useState(null);
   const [confirmacao, setConfirmacao] = useState(null);
