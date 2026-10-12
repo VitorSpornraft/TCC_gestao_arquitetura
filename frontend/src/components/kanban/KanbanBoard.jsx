@@ -22,11 +22,11 @@ export default function KanbanBoard({
   aoAdicionarSubtarefa,
 }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+    <div className="flex gap-6 w-full overflow-x-auto overflow-y-hidden h-[calc(100vh-200px)] pb-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:bg-zinc-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
       {colunasConfig.map((col, idx) => (
         <div
           key={idx}
-          className={`border rounded-2xl p-5 flex flex-col min-h-[580px] w-full ${col.estiloColuna} ${
+          className={`border rounded-2xl p-5 flex flex-col max-h-full flex-1 min-w-[320px] ${col.estiloColuna} ${
             colunaSobreArrasto === col.statusKey
               ? "ring-2 ring-indigo-400 bg-indigo-50/80"
               : ""
@@ -42,7 +42,7 @@ export default function KanbanBoard({
             aoMoverTarefa(e.dataTransfer.getData("tarefaId"), col.statusKey);
           }}
         >
-          <div className="flex justify-between items-center mb-4 px-1">
+          <div className="flex justify-between items-center mb-4 px-1 shrink-0">
             <h3 className="text-sm font-bold text-zinc-700 uppercase tracking-wider">
               {col.titulo}
             </h3>
@@ -53,7 +53,7 @@ export default function KanbanBoard({
             </span>
           </div>
 
-          <div className="flex flex-col gap-3.5">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-1 flex flex-col gap-3.5 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-zinc-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
             {col.lista.map((t) => {
               const projetoObj = projetos.find((p) => p.id === t.projeto);
               const clienteObj = projetoObj
