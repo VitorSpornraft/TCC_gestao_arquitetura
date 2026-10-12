@@ -18,7 +18,7 @@ export default function TaskEditModal({
       <div className="bg-white border border-zinc-200 rounded-2xl w-full max-w-lg p-6 shadow-xl max-h-[90vh] overflow-y-auto animate-slideUp">
         <div className="flex items-center justify-between mb-5 pb-3 border-b border-zinc-100">
           <h3 className="text-lg font-semibold text-zinc-900 m-0">
-            Detalhes & Entregável da Tarefa
+            Detalhes
           </h3>
           <button
             type="button"

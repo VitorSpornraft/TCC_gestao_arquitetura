@@ -68,7 +68,7 @@ const NAV_ITEMS = [
   },
   {
     id: "clientes",
-    label: "Clientes & Arquivos",
+    label: "Clientes & Obras",
     isActive: (telaAtual) => telaAtual === "clientes" || telaAtual === "explorador",
     onClick: (setTelaAtual, setClienteSelecionado) => {
       setTelaAtual("clientes");
