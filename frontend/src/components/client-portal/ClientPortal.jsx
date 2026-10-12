@@ -39,15 +39,8 @@ export default function ClientPortal({
   const [carregandoObras, setCarregandoObras] = useState(false);
 
   // --- ESTADOS DE DADOS DAS OBRAS E NAVEGAÇÃO ---
-  // Lazy Initialization: leitura síncrona do sessionStorage para eliminar flicker ao voltar
-  const [projetoAberto, setProjetoAberto] = useState(() => {
-    try {
-      const salvo = sessionStorage.getItem('cliente_projeto_ativo');
-      return salvo ? JSON.parse(salvo) : null;
-    } catch {
-      return null;
-    }
-  });
+  // O portal sempre inicia na lista de obras; a navegação interna só ocorre por clique explícito
+  const [projetoAberto, setProjetoAberto] = useState(null);
 
   const [projetosLocais, setProjetosLocais] = useState(() => {
     if (projetos && projetos.length > 0) return projetos;
@@ -116,26 +109,12 @@ export default function ClientPortal({
         setProjetosLocais(resProjetos.data);
         localStorage.setItem('cliente_projetos', JSON.stringify(resProjetos.data));
 
-        // Mantém atualizado o projeto aberto no sessionStorage com dados frescos
-        let salvoAtivo = null;
-        try {
-          const s = sessionStorage.getItem('cliente_projeto_ativo');
-          if (s) salvoAtivo = JSON.parse(s);
-        } catch {
-          salvoAtivo = null;
-        }
-
-        const alvo = projetoAberto || salvoAtivo;
-        if (alvo) {
-          const atualizado = resProjetos.data.find((p) => String(p.id) === String(alvo.id));
-          if (atualizado) {
-            setProjetoAberto(atualizado);
-            sessionStorage.setItem('cliente_projeto_ativo', JSON.stringify(atualizado));
-          }
-        } else if (resProjetos.data.length === 1) {
-          setProjetoAberto(resProjetos.data[0]);
-          sessionStorage.setItem('cliente_projeto_ativo', JSON.stringify(resProjetos.data[0]));
-        }
+        // Se houver uma obra ativamente selecionada em tela, atualiza seus dados com os dados mais recentes
+        setProjetoAberto((prev) => {
+          if (!prev) return null;
+          const atualizado = resProjetos.data.find((p) => String(p.id) === String(prev.id));
+          return atualizado || prev;
+        });
       }
 
       if (resPastas?.data) {
@@ -221,16 +200,10 @@ export default function ClientPortal({
   // --- HANDLERS DE AÇÃO E NAVEGAÇÃO ---
   const handleAcessoProjeto = (projeto) => {
     setProjetoAberto(projeto);
-    if (projeto) {
-      sessionStorage.setItem('cliente_projeto_ativo', JSON.stringify(projeto));
-    } else {
-      sessionStorage.removeItem('cliente_projeto_ativo');
-    }
   };
 
   const handleVoltarProjetos = () => {
     setProjetoAberto(null);
-    sessionStorage.removeItem('cliente_projeto_ativo');
   };
 
   const handleCliqueArquivo = (arq) => {
