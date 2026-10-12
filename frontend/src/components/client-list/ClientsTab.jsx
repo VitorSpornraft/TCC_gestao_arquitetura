@@ -112,12 +112,12 @@ export default function ClientsTab({
                   {aoEditarCliente && (
                     <button
                       type="button"
-                      className="text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 p-2 rounded-xl transition-colors cursor-pointer"
+                      className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer shrink-0"
                       title="Editar Cliente"
                       onClick={() => aoEditarCliente(cliente)}
                     >
                       <svg
-                        className="w-4 h-4"
+                        className="w-4 h-4 shrink-0"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -132,7 +132,7 @@ export default function ClientsTab({
                   )}
                   <button
                     type="button"
-                    className="text-zinc-400 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-xl transition-colors cursor-pointer"
+                    className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
                     title="Excluir Cliente"
                     onClick={() => aoDeletarCliente(cliente.id, cliente.nome)}
                   >

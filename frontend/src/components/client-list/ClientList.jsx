@@ -190,7 +190,7 @@ export default function ClientList({
                   {abaFiltro === "arquivados" && (
                     <button
                       type="button"
-                      className="text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 p-1.5 rounded-md transition-colors"
+                      className="w-8 h-8 flex items-center justify-center text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer shrink-0"
                       title="Restaurar Obra"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -198,8 +198,7 @@ export default function ClientList({
                       }}
                     >
                       <svg
-                        width="15"
-                        height="15"
+                        className="w-4 h-4 shrink-0"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -215,7 +214,7 @@ export default function ClientList({
 
                   <button
                     type="button"
-                    className="text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-md transition-colors"
+                    className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer shrink-0"
                     title="Editar Obra"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -223,8 +222,7 @@ export default function ClientList({
                     }}
                   >
                     <svg
-                      width="15"
-                      height="15"
+                      className="w-4 h-4 shrink-0"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -239,7 +237,7 @@ export default function ClientList({
 
                   <button
                     type="button"
-                    className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-md transition-colors"
+                    className="w-8 h-8 flex items-center justify-center text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
                     title="Excluir Obra"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -247,8 +245,7 @@ export default function ClientList({
                     }}
                   >
                     <svg
-                      width="15"
-                      height="15"
+                      className="w-4 h-4 shrink-0"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
