@@ -180,26 +180,24 @@ class Pasta(models.Model):
     criado_em = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        tornou_visivel = False
+        mudou_visibilidade = False
         
-        # Identifica se a pasta está a ser atualizada e se a visibilidade mudou para True
         if self.pk:
             estado_anterior = Pasta.objects.get(pk=self.pk)
-            if not estado_anterior.visivel_cliente and self.visivel_cliente:
-                tornou_visivel = True
+            if estado_anterior.visivel_cliente != self.visivel_cliente:
+                mudou_visibilidade = True
 
         super().save(*args, **kwargs)
 
-        # Regra de Herança (Cascata): Se a pasta ficar visível, liberta os conteúdos internos
-        if tornou_visivel:
-            self.arquivos.update(visivel_cliente=True)
+        if mudou_visibilidade:
+            self.arquivos.update(visivel_cliente=self.visivel_cliente)
+            
             for subpasta in self.subpastas.all():
-                subpasta.visivel_cliente = True
+                subpasta.visivel_cliente = self.visivel_cliente
                 subpasta.save()
 
     def __str__(self):
         return f"{self.nome} ({self.projeto.nome_projeto})"
-
 
 class Arquivo(models.Model):
     STATUS_APROVACAO_CHOICES = [
@@ -221,9 +219,12 @@ class Arquivo(models.Model):
     criado_em = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        # REGRA CRÍTICA DE STACKING: Qualquer novo upload nasce OBRIGATORIAMENTE como 'PENDENTE'
         if not self.pk:
             self.status_aprovacao = 'PENDENTE'
+            
+            if self.pasta:
+                self.visivel_cliente = self.pasta.visivel_cliente
+                
         super().save(*args, **kwargs)
 
     def __str__(self):
