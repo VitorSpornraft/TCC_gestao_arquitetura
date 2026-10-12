@@ -117,16 +117,12 @@ class Tarefa(models.Model):
 
         if status_seguro == 'PUBLISHED':
             self.progresso = 100
-            self.status = 'PUBLISHED' 
+            self.status = 'PUBLISHED'
         elif self.pk:
             total_sub = self.subtarefas.count()
             if total_sub > 0:
                 concluidas = self.subtarefas.filter(concluida=True).count()
-                if concluidas == total_sub:
-                    self.status = 'PUBLISHED'
-                    self.progresso = 100
-                else:
-                    self.progresso = int((concluidas / total_sub) * 100)
+                self.progresso = int((concluidas / total_sub) * 100)
             else:
                 self.progresso = 0
         else:
@@ -135,7 +131,8 @@ class Tarefa(models.Model):
         super().save(*args, **kwargs)
 
         if self.pk and self.status == 'PUBLISHED':
-            self.subtarefas.update(concluida=True)
+            if self.subtarefas.filter(concluida=False).exists():
+                self.subtarefas.update(concluida=True)
 
     def __str__(self):
         return self.titulo
@@ -149,11 +146,26 @@ class Subtarefa(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        self.tarefa.save()
+
+        tarefa_pai = self.tarefa
+        total = tarefa_pai.subtarefas.count()
+        concluidas = tarefa_pai.subtarefas.filter(concluida=True).count()
+
+        if total > 0 and concluidas == total and str(tarefa_pai.status).upper() != 'PUBLISHED':
+            tarefa_pai.status = 'PUBLISHED'
+        
+        tarefa_pai.save()
 
     def delete(self, *args, **kwargs):
         tarefa_pai = self.tarefa
         super().delete(*args, **kwargs)
+
+        total = tarefa_pai.subtarefas.count()
+        concluidas = tarefa_pai.subtarefas.filter(concluida=True).count()
+
+        if total > 0 and concluidas == total and str(tarefa_pai.status).upper() != 'PUBLISHED':
+            tarefa_pai.status = 'PUBLISHED'
+
         tarefa_pai.save()
 
     def __str__(self):
