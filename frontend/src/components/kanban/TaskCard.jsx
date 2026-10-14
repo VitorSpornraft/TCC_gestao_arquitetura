@@ -186,7 +186,20 @@ export default function TaskCard({
               className="text-[10px] bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded font-bold flex items-center gap-1"
               title="Arquivo desta tarefa com alterações solicitadas pelo cliente"
             >
-              ⚠️ Ajuste Solicitado
+              <svg
+                className="w-3 h-3 text-rose-600 shrink-0"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              <span>Ajuste Solicitado</span>
             </span>
           )}
           {!temRejeitado && temPendente && (
@@ -194,7 +207,21 @@ export default function TaskCard({
               className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded font-bold flex items-center gap-1"
               title="Arquivo desta tarefa aguardando aprovação do cliente"
             >
-              ⏳ Validação Pendente
+              <svg
+                className="w-3 h-3 text-amber-600 shrink-0"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 22h14" />
+                <path d="M5 2h14" />
+                <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
+                <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
+              </svg>
+              <span>Validação Pendente</span>
             </span>
           )}
           {!temRejeitado && !temPendente && temAprovado && (
@@ -202,7 +229,18 @@ export default function TaskCard({
               className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-bold flex items-center gap-1"
               title="Arquivo desta tarefa aprovado pelo cliente"
             >
-              ✓ Aprovado
+              <svg
+                className="w-3 h-3 text-emerald-600 shrink-0"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>Aprovado</span>
             </span>
           )}
         </div>
@@ -230,7 +268,22 @@ export default function TaskCard({
               <line x1="3" y1="10" x2="21" y2="10"></line>
             </svg>
             <span>{tarefa.prazo.split("-").reverse().join("/")}</span>
-            {atrasado && <span className="font-bold ml-0.5">⚠️</span>}
+            {atrasado && (
+              <svg
+                className="w-3 h-3 text-rose-600 shrink-0 ml-0.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-label="Atrasado"
+              >
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            )}
           </div>
         )}
       </div>
