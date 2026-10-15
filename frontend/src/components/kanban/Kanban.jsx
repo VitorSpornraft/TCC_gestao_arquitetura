@@ -270,7 +270,7 @@ export default function Kanban({
         aoAbrirHistorico={(arquivo) => {
           setArquivoHistoricoId(arquivo.id);
           setArquivoHistoricoNome(
-            arquivo.arquivo ? arquivo.arquivo.split("/").pop() : "Documento",
+            arquivo.nome || arquivo.arquivo || "Documento",
           );
         }}
         aoToggleSubtarefa={aoToggleSubtarefa}

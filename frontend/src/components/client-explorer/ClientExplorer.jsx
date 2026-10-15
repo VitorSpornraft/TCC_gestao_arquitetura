@@ -437,7 +437,7 @@ export default function ClientExplorer({
         })}
 
         {arquivosFiltrados.map((arq) => {
-          const nomeExibicao = formatarNomeArquivo(arq.arquivo);
+          const nomeExibicao = arq.nome || formatarNomeArquivo(arq.arquivo);
           const qtdVersoes =
             arq.qtd_versoes !== undefined
               ? arq.qtd_versoes

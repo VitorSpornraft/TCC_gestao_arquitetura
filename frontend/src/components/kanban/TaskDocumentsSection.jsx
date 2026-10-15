@@ -1,5 +1,8 @@
 import ApprovalStatusBadge from "../common/ApprovalStatusBadge";
-import { resolverArquivosVersaoRecente } from "../client-explorer/fileUtils";
+import {
+  formatarNomeArquivo,
+  resolverArquivosVersaoRecente,
+} from "../client-explorer/fileUtils";
 
 export default function TaskDocumentsSection({
   arquivos,
@@ -25,9 +28,7 @@ export default function TaskDocumentsSection({
       </p>
       <div className="max-h-36 overflow-y-auto space-y-1.5 pt-1">
         {documentos.map((arq) => {
-          const nomeArq = arq.arquivo
-            ? arq.arquivo.split("/").pop()
-            : "Documento";
+          const nomeArq = arq.nome || (arq.arquivo ? formatarNomeArquivo(arq.arquivo) : "Documento");
           return (
             <div
               key={arq.id}

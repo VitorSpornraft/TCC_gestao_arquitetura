@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import ApprovalStatusBadge from '../common/ApprovalStatusBadge';
+import { formatarNomeArquivo } from '../client-explorer/fileUtils';
 
 export default function HistoricoModal({
   arquivoId,
@@ -55,7 +56,7 @@ export default function HistoricoModal({
               </span>
               <h3 className="text-base font-semibold text-zinc-900 m-0">Histórico de Versões</h3>
             </div>
-            <p className="text-xs text-zinc-500 m-0 mt-1 truncate max-w-[320px]">{arquivoNome}</p>
+            <p className="text-xs text-zinc-500 m-0 mt-1 truncate max-w-[320px]">{formatarNomeArquivo(arquivoNome)}</p>
           </div>
           <button onClick={onClose} className="text-zinc-400 hover:text-zinc-900 text-lg p-1 cursor-pointer">✕</button>
         </div>
@@ -68,7 +69,7 @@ export default function HistoricoModal({
             {versoes.map((ver, index) => {
               const isAtual = index === 0;
               const numeroVersao = versoes.length - index;
-              const nomeVer = ver.arquivo ? ver.arquivo.split('/').pop() : 'Documento';
+              const nomeVer = ver.nome || (ver.arquivo ? formatarNomeArquivo(ver.arquivo) : 'Documento');
               const dataFormatada = ver.criado_em ? new Date(ver.criado_em).toLocaleString('pt-BR') : 'Data não registrada';
               const urlArquivo = ver.arquivo?.startsWith('http') ? ver.arquivo : `http://127.0.0.1:8000${ver.arquivo}`;
 

@@ -45,8 +45,23 @@ export function isArquivoImagem(arq) {
 
 export function formatarNomeArquivo(urlOuCaminho) {
   if (!urlOuCaminho) return "Documento";
-  const nomeOriginal = urlOuCaminho.split("/").pop();
-  return nomeOriginal.replace(/_[A-Za-z0-9]{6,8}(\.[^.]+)$/, "$1");
+  const valor =
+    typeof urlOuCaminho === "object"
+      ? urlOuCaminho.nome || urlOuCaminho.arquivo || ""
+      : urlOuCaminho;
+  if (!valor || typeof valor !== "string") return "Documento";
+
+  const limpo = valor.split("?")[0].split("#")[0];
+  const nomeOriginal = limpo.split("/").pop().split("\\").pop();
+
+  let nomeDecodificado = nomeOriginal;
+  try {
+    nomeDecodificado = decodeURIComponent(nomeOriginal);
+  } catch {
+    nomeDecodificado = nomeOriginal;
+  }
+
+  return nomeDecodificado.replace(/_[A-Za-z0-9-]{6,}(\.[^.]+|)$/, "$1");
 }
 
 export async function forcarDownload(url, nomeArquivo) {
