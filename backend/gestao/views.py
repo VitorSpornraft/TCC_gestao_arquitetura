@@ -8,6 +8,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.throttling import ScopedRateThrottle, AnonRateThrottle, UserRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import timedelta
 from django.contrib.auth.models import User
 from .models import (
     Cliente, Projeto, Tarefa, Subtarefa, Pasta, Arquivo, Evento, Feedback, CodigoValidacao
@@ -21,6 +22,15 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+# ==============================================================================
+# SIMPLE JWT: CONFIGURAÇÃO DE TEMPO DE EXPIRAÇÃO
+# ==============================================================================
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2), # Define a validade do login (ex: 2 horas)
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7), # Tempo de validade do token de renovação
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+}
 
 # ==============================================================================
 # SEGURANÇA: CONTROLE DE ACESSO E ISOLAMENTO DE TENANT (RLS / ANTI-IDOR)
@@ -533,8 +543,6 @@ class ArquivoViewSet(viewsets.ModelViewSet):
         tamanho = arquivo_obj.size if arquivo_obj else 0
         versao_de_id = self.request.data.get('versao_de')
         
-        # Bloqueio de Mass Assignment & Regra de Stacking:
-        # Força status_aprovacao = 'PENDENTE' e tamanho_bytes calculado no backend
         save_kwargs = {'tamanho_bytes': tamanho, 'status_aprovacao': 'PENDENTE'}
         if versao_de_id:
             arquivo_pai = self.get_queryset().filter(id=versao_de_id).first()

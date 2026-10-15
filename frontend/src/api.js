@@ -85,9 +85,7 @@ api.interceptors.response.use(
                 }
 
                 // Força redirecionamento imediato para a tela de login
-                if (window.location.pathname !== '/') {
-                    window.location.href = '/';
-                }
+                window.location.reload();
             }
         }
         return Promise.reject(error);
